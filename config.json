@@ -1,0 +1,10 @@
+{
+  "rpcUrl": "https://rpc.mainnet.x1.xyz",
+  "votePubkey": "Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs",
+  "liquidityPoolAddress": "CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR",
+  "fallbackPriceUsd": 1.0,
+  "outputFile": "xnt_rewards_with_prices.csv",
+  "verbose": false,
+  "epochs": null,
+  "json": false
+}

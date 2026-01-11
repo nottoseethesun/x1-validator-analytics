@@ -1,0 +1,25 @@
+{
+  "name": "xnt-validator-analytics-tests",
+  "version": "1.0.0",
+  "description": "Automated tests for the xnt-validator-analytics validator earnings script",
+  "private": true,
+  "author": "Chris M Balz using Grok to Generate",
+  "license": "Apache License, Version 2.0",
+  "scripts": {
+    "test": "mocha *.js --timeout 300000 --reporter spec",
+    "test:basic": "mocha test-rewards-basic.js --timeout 30000",
+    "test:full": "mocha test-rewards-full.js --timeout 300000",
+    "test:rollback": "mocha test-rollback-handling.js --timeout 60000",
+    "test:json": "mocha test-json-export.js --timeout 60000",
+    "test:all": "npm run test"
+  },
+  "devDependencies": {
+    "mocha": "^10.8.2",
+    "chai": "^5.1.2",
+    "chai-as-promised": "^8.0.0",
+    "sinon": "^19.0.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

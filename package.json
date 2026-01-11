@@ -1,0 +1,19 @@
+{
+  "name": "x1-rewards-fetcher",
+  "version": "1.0.0",
+  "description": "A Node.js script to fetch inflation rewards for an X1 validator vote account, retrieve historical $XNT prices from a specified liquidity pool, and output a CSV spreadsheet with reward details and USD values.",
+  "main": "fetch-total-validator-earnings.js",
+  "type": "module",
+  "scripts": {
+    "start": "node fetch-total-validator-earnings.js",
+    "test-csv": "node test/test-csv.js"
+  },
+  "dependencies": {
+    "@solana/web3.js": "^1.95.3",
+    "yargs": "^17.7.2",
+    "moment": "^2.30.1",
+    "csv-stringify": "^6.5.1"
+  },
+  "author": "Chris M Balz using Grok to Generate",
+  "license": "Apache License, Version 2.0"
+}

@@ -1,3 +1,11 @@
+# Local app
+test-output.csv
+xnt_rewards_analytics.csv
+xnt_rewards_with_prices.csv
+xnt_rewards.json
+xnt_rewards_analytics.json
+
+
 # Logs
 logs
 *.log
