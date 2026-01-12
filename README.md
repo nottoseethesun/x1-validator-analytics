@@ -12,8 +12,8 @@ Utilities for reading and summarizing X1 blockchain data about X1 network valida
 
 #### Sample Output
 
-![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png")
-![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png")
+![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png)
+![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png)
 
 ## Prerequisites
 
