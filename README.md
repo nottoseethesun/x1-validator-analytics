@@ -12,7 +12,7 @@ Utilities for reading and summarizing X1 blockchain data about X1 network valida
 
 #### Sample Output
 
-<img width="861" height="332" alt="image" src="https://github.com/user-attachments/assets/d72e2dd5-e9c6-4502-9b97-e49ba4fc7985" />
+<img width="961" height="572" alt="image" src="https://github.com/user-attachments/assets/5c472ad5-1796-43ac-9356-b573402b8d52" />
 
 <img width="898" height="513" alt="image" src="https://github.com/user-attachments/assets/dc1b536d-d3a3-42d2-a3b5-3d065f8a23ad" />
 
