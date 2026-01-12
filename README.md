@@ -8,14 +8,12 @@ Utilities for reading and summarizing X1 blockchain data about X1 network valida
 
 ### Current Roster of Utilities
 
-- fetch-total-validator-earnings.js 
+- fetch-total-validator-earnings.js
 
 #### Sample Output
 
-<img width="961" height="572" alt="image" src="https://github.com/user-attachments/assets/5c472ad5-1796-43ac-9356-b573402b8d52" />
-
-<img width="898" height="513" alt="image" src="https://github.com/user-attachments/assets/dc1b536d-d3a3-42d2-a3b5-3d065f8a23ad" />
-
+![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png")
+![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png")
 
 ## Prerequisites
 
@@ -47,3 +45,5 @@ To be accepted for pull request:
 - All tests must pass
 - Any major new functionality must have a test runnable from the current approach
 - All code must be modular e.g. low cyclomatic complexity ~17 or so.
+
+[![Tests](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/test.yml/badge.svg)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/test.yml)

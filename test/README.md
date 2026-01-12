@@ -24,12 +24,12 @@ Note: A `package.json` already exists with the required dev dependencies, so thi
 
 All tests use the fixed vote pubkey shown above.
 
-| File                        | What it checks                                                                                     | Typical run time | Command                     |
-|-----------------------------|----------------------------------------------------------------------------------------------------|------------------|-----------------------------|
-| test-rewards-basic.js       | Small `--epochs 4` run: exit code 0, creates CSVs, exactly 4 rewards/days, zero failures           | ~5–10 sec        | `npm run test:basic`        |
-| test-rewards-full.js        | Full history (no `--epochs`): exit code 0, creates CSVs, exactly 99 rewards, exactly 15 early rollback failures, zero unexpected failures | ~30–60 sec       | `npm run test:full`         |
-| test-rollback-handling.js   | `--epochs 50` run: exit code 0, creates CSVs, zero early failures (pre-reboot epochs not reached), zero unexpected failures | ~10–20 sec       | `npm run test:rollback`     |
-| test-json-export.js         | `--json` flag with `--epochs 4`: exit code 0, creates both JSON files, detailed JSON has exactly 4 entries, analytics JSON has correct summary metrics (days=4, total positive, failures=0) | ~10–20 sec       | `npm run test:json`         |
+| File | What it checks | Typical run time | Command |
+| --- | --- | --- | --- |
+| test-rewards-basic.js | Small `--epochs 4` run: exit code 0, creates CSVs, exactly 4 rewards/days, zero failures | ~5–10 sec | `npm run test:basic` |
+| test-rewards-full.js | Full history (no `--epochs`): exit code 0, creates CSVs, exactly 99 rewards, exactly 15 early rollback failures, zero unexpected failures | ~30–60 sec | `npm run test:full` |
+| test-rollback-handling.js | `--epochs 50` run: exit code 0, creates CSVs, zero early failures (pre-reboot epochs not reached), zero unexpected failures | ~10–20 sec | `npm run test:rollback` |
+| test-json-export.js | `--json` flag with `--epochs 4`: exit code 0, creates both JSON files, detailed JSON has exactly 4 entries, analytics JSON has correct summary metrics (days=4, total positive, failures=0) | ~10–20 sec | `npm run test:json` |
 
 ## How to Run
 
