@@ -33,7 +33,7 @@ Refer to the module or file header documentation.
 
 ```bash
 cd test
-node run-tests.js
+npm run test
 ```
 
 ## Contributing
