@@ -1,0 +1,31 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js (latest stable)
+      uses: actions/setup-node@v4
+      with:
+        node-version: 'lts/*'      # ← latest Long-Term Support version (e.g. 22.x now)
+        cache: 'npm'
+
+    - name: Install root dependencies
+      run: npm install
+
+    - name: Install test dependencies
+      run: cd test && npm install
+
+    - name: Run full test suite
+      run: npm run test
+      working-directory: ./test
