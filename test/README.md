@@ -1,59 +1,87 @@
-# Test Suite for xnt-validator-analytics
+# Test Suite for x1-validator-analytics
 
-This directory contains automated tests to catch common regressions in fetch-total-validator-earnings.js.
+This directory contains automated Mocha tests to catch regressions in `../fetch-total-validator-earnings.js`.
 
-All tests use the fixed vote pubkey:
-Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs
+All tests use the fixed vote pubkey:  
+`Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs`
 
 ## Requirements
 
 - Node.js >= 20
-- The main script and its modules (configLoader.js, csvWriter.js, jsonWriter.js) in the parent directory
-- config.json present (or defaults will be used)
+- The main script and its modules (`../configLoader.js`, `../csvWriter.js`, `../jsonWriter.js`) in the parent directory
+- `../config.json` present (or defaults will be used)
 
 ## Installation (once)
 
+```bash
 cd test
-npm init -y
-npm install mocha chai chai-as-promised sinon --save-dev
+npm install
+```
+
+Note: A `package.json` already exists with the required dev dependencies, so this will install them. No need to run `npm init`.
 
 ## Available Tests
 
-File                           What it checks                                                                 Typical run time
-test-rewards-basic.js          Small --epochs 4 run: count, totals, cumulatives, dates, no failures         ~5–10 sec
-test-rewards-full.js           Full history (no --epochs): expects ~99 rewards, 15 early failures, correct rollback note ~1–2 min
-test-rollback-handling.js      Verifies rollback note appears only for early failures, unexpected = 0        ~10–20 sec
-test-json-export.js            --json flag: checks both JSON files exist, contain correct metrics & cumulatives ~10–20 sec
+All tests use the fixed vote pubkey shown above.
 
-## How to Run (after npm install in test/ directory)
+| File                        | What it checks                                                                                     | Typical run time | Command                     |
+|-----------------------------|----------------------------------------------------------------------------------------------------|------------------|-----------------------------|
+| test-rewards-basic.js       | Small `--epochs 4` run: exit code 0, creates CSVs, exactly 4 rewards/days, zero failures           | ~5–10 sec        | `npm run test:basic`        |
+| test-rewards-full.js        | Full history (no `--epochs`): exit code 0, creates CSVs, exactly 99 rewards, exactly 15 early rollback failures, zero unexpected failures | ~30–60 sec       | `npm run test:full`         |
+| test-rollback-handling.js   | `--epochs 50` run: exit code 0, creates CSVs, zero early failures (pre-reboot epochs not reached), zero unexpected failures | ~10–20 sec       | `npm run test:rollback`     |
+| test-json-export.js         | `--json` flag with `--epochs 4`: exit code 0, creates both JSON files, detailed JSON has exactly 4 entries, analytics JSON has correct summary metrics (days=4, total positive, failures=0) | ~10–20 sec       | `npm run test:json`         |
 
-Run all tests:
+## How to Run
 
-```bash
-mocha *.js --timeout 300000 --reporter spec
-```
-
-Run a single test:
+Run the full suite (recommended – all 20 tests; automatically cleans up old output files first):
 
 ```bash
-mocha test-rewards-basic.js
+npm test
 ```
 
-Run with verbose output:
+Run a single test group (also auto-cleans first):
 
 ```bash
-mocha --reporter spec *.js
+npm run test:basic
+npm run test:full
+npm run test:rollback
+npm run test:json
 ```
 
-## Exit Codes & Expectations:
+Filter tests by name (runs matching files):
 
-- All tests pass → exit code 0
-- Any failure → exit code 1 + detailed error
+```bash
+npm test -- --grep "basic"
+npm test -- --grep "json"
+npm test -- --grep "rollback"
+npm test -- --grep "full"
+```
+
+### Cleaning Output Files
+
+Test runs automatically clean old output files (CSVs/JSONs) before execution (via `pretest` hook and explicit calls in individual scripts).
+
+To clean manually (e.g. after manual script runs or failed tests):
+
+```bash
+npm run clean
+```
+
+Files removed:
+
+- `xnt_rewards_with_prices.csv`
+- `xnt_rewards_analytics.csv`
+- `xnt_rewards.json`
+- `xnt_rewards_analytics.json`
+- `test-output.csv`
 
 ## Tips
 
-- Run full-history test periodically to catch RPC changes
-- Increase --timeout if your RPC is slow
-- Add --grep "basic" to run only specific tests (e.g. mocha *.js --grep "basic")
+- Full-history test (`npm run test:full`) takes longest — run it periodically to catch chain/RPC changes.
+- Increase timeout if RPC is slow: edit `package.json` or run `npm test -- --timeout 600000`
+- All tests are locked to the fixed vote pubkey above — update `test-utils.js` if testing other validators.
 
-Happy testing!
+## Exit Codes & Expectations
+
+- All tests pass → exit code 0
+- Any failure → exit code 1 + detailed error message

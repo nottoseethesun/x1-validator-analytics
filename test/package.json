@@ -1,25 +1,27 @@
 {
-  "name": "xnt-validator-analytics-tests",
+  "name": "x1-validator-analytics-tests",
   "version": "1.0.0",
-  "description": "Automated tests for the xnt-validator-analytics validator earnings script",
-  "private": true,
+  "description": "Mocha tests for x1-validator-analytics",
   "author": "Chris M Balz using Grok to Generate",
-  "license": "Apache License, Version 2.0",
+  "license": "Apache License, Version 2.0",       
+  "private": true,
   "scripts": {
-    "test": "mocha *.js --timeout 300000 --reporter spec",
-    "test:basic": "mocha test-rewards-basic.js --timeout 30000",
-    "test:full": "mocha test-rewards-full.js --timeout 300000",
-    "test:rollback": "mocha test-rollback-handling.js --timeout 60000",
-    "test:json": "mocha test-json-export.js --timeout 60000",
-    "test:all": "npm run test"
+    "clean": "rm -f xnt_rewards_with_prices.csv xnt_rewards_analytics.csv xnt_rewards.json xnt_rewards_analytics.json test-output.csv",
+    "pretest": "npm run clean",
+    "test": "mocha \"*.js\" --timeout 300000 --reporter spec",
+    "test:basic": "npm run clean && mocha test-rewards-basic.js --timeout 30000 --reporter spec",
+    "test:full": "npm run clean && mocha test-rewards-full.js --timeout 300000 --reporter spec",
+    "test:rollback": "npm run clean && mocha test-rollback-handling.js --timeout 60000 --reporter spec",
+    "test:json": "npm run clean && mocha test-json-export.js --timeout 60000 --reporter spec"
   },
   "devDependencies": {
-    "mocha": "^10.8.2",
+    "mocha": "^11.0.1",
     "chai": "^5.1.2",
     "chai-as-promised": "^8.0.0",
-    "sinon": "^19.0.2"
+    "sinon": "^19.0.2",
+    "csv-parse": "^6.1.0"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=20"
   }
 }
