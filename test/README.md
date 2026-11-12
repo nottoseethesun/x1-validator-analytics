@@ -10,6 +10,7 @@ All tests use the fixed vote pubkey:
 - Node.js >= 20
 - The main script and its modules (`../configLoader.js`, `../csvWriter.js`, `../jsonWriter.js`) in the parent directory
 - `../config.json` present (or defaults will be used)
+- Network access to the live X1 endpoint, `https://rpc.mainnet.x1.xyz`, for every test but `test-known-bugs.js`
 
 ## Installation (once)
 
@@ -30,10 +31,11 @@ All tests use the fixed vote pubkey shown above.
 | test-rewards-full.js | Full history (no `--epochs`): exit code 0, creates CSVs, exactly 99 rewards, exactly 15 early rollback failures, zero unexpected failures | ~30–60 sec | `npm run test:full` |
 | test-rollback-handling.js | `--epochs 50` run: exit code 0, creates CSVs, zero early failures (pre-reboot epochs not reached), zero unexpected failures | ~10–20 sec | `npm run test:rollback` |
 | test-json-export.js | `--json` flag with `--epochs 4`: exit code 0, creates both JSON files, detailed JSON has exactly 4 entries, analytics JSON has correct summary metrics (days=4, total positive, failures=0) | ~10–20 sec | `npm run test:json` |
+| test-known-bugs.js | Known bugs, one test each, run against a stand-in X1 endpoint on this computer, so no network is needed: each passes while its bug is present (see `../CLAUDE.md`) | ~2 sec | `npm run test:known-bugs` |
 
 ## How to Run
 
-Run the full suite (recommended – all 20 tests; automatically cleans up old output files first):
+Run the full suite (recommended – all 23 tests; automatically cleans up old output files first):
 
 ```bash
 npm test
@@ -46,6 +48,7 @@ npm run test:basic
 npm run test:full
 npm run test:rollback
 npm run test:json
+npm run test:known-bugs
 ```
 
 Filter tests by name (runs matching files):

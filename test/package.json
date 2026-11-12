@@ -12,7 +12,8 @@
     "test:basic": "npm run clean && mocha test-rewards-basic.js --timeout 30000 --reporter spec",
     "test:full": "npm run clean && mocha test-rewards-full.js --timeout 300000 --reporter spec",
     "test:rollback": "npm run clean && mocha test-rollback-handling.js --timeout 60000 --reporter spec",
-    "test:json": "npm run clean && mocha test-json-export.js --timeout 60000 --reporter spec"
+    "test:json": "npm run clean && mocha test-json-export.js --timeout 60000 --reporter spec",
+    "test:known-bugs": "mocha test-known-bugs.js --timeout 60000 --reporter spec"
   },
   "devDependencies": {
     "mocha": "^11.0.1",
