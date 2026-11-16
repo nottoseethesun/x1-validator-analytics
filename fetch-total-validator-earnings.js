@@ -1,9 +1,9 @@
 /**
  * @fileoverview
  * Fetches inflation rewards for a specified vote account on the X1 blockchain (Solana fork)
- * from the previous completed epoch back to epoch 0 (full history by default), assigns $XNT prices (fallback $1),
- * and generates two CSVs: main per-epoch rewards (with cumulative columns) + separate analytics summary.
- * Optional JSON export available.
+ * from the previous completed epoch back to epoch 0 (full history by default), prices each
+ * reward in USD at its own time, and generates two CSVs: main per-epoch rewards (with
+ * cumulative columns) + separate analytics summary. Optional JSON export available.
  *
  * @usage
  * Full history (default): node fetch-total-validator-earnings.js --vote-pubkey YOUR_PUBKEY
@@ -13,9 +13,8 @@
  *
  * @commandLineOptions
  * --rpc-url              X1 RPC endpoint                       Default: from config.json
- * --vote-pubkey          Vote account public key               Required if not in config.json
- * --liquidity-pool-address  Liquidity pool address for price   Default: from config.json
- * --fallback-price-usd   Fallback price ($/XNT)                Default: from config.json
+ * --vote-pubkey          Vote account public key               Required
+ * --liquidity-pool-address  Pool the XNT price comes from      Default: from config.json
  * --output, -o           Main CSV file path                    Default: from config.json
  * --verbose, -v          Enable detailed verbose logging      (flag, default: false)
  * --epochs, -n           Number of epochs to process (from current-1 backwards)  (optional, default: null = unlimited/full)
@@ -25,6 +24,12 @@
  * - Processes from current-1 back to epoch 0 by default (full history).
  * - Uses X1-specific getInflationReward (epoch as plain u64).
  * - Per-epoch error handling: skips failed queries without crashing.
+ * - Amounts are exact: XNT has nine decimal places, and every amount and XNT total keeps all nine.
+ * - Each reward's price is XNT's in the USD stablecoin of the pool at liquidityPoolAddress, from
+ *   GeckoTerminal's hourly candles: the close of the last candle that opened at or before the
+ *   reward, less than a day before it (see xnt-price.js). GeckoTerminal's X1 candles start on
+ *   2026-10-01, so an earlier reward has empty price and value cells, with a warning; it never
+ *   gets a stand-in price, and the USD totals leave it out.
  * - Main CSV includes "Cumulative XNT" and "Cumulative USD" running totals.
  * - Progress bar shown in quiet mode for long runs.
  * - Generates separate analytics CSV (xnt_rewards_analytics.csv).
@@ -32,6 +37,7 @@
  * - CSV files include UTF-8 BOM for correct opening in LibreOffice/Excel.
  * - Early epoch failures (<=15) are expected due to X1 rollback/reboot.
  * - Reward dates now use real block time from effectiveSlot + getBlockTime() when available.
+ * - Settings come from config.json in the folder the script runs in (see configLoader.js).
  * - Requires Node.js ≥ 20 for stable ESM support.
  */
 
@@ -39,46 +45,66 @@ import { Connection, PublicKey } from '@solana/web3.js';
 import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 import moment from 'moment';
-import fs from 'fs';
-import { stringify } from 'csv-stringify/sync';
 import { loadConfig } from './configLoader.js';
 import { writeMainCsv, writeAnalyticsCsv } from './csvWriter.js';
 import { writeJsonExport } from './jsonWriter.js';
+import { formatXnt } from './xnt-amount.js';
+import { geckoTerminalSource, priceTimes } from './xnt-price.js';
+import { rewardRows } from './rewards.js';
+import { summarizeRewards } from './summary.js';
 
 /**
- * Fetches historical $XNT price at given timestamp from the specified liquidity pool.
- * Currently returns fallback value due to lack of public historical price API.
+ * Prices each reward at its own time, from GeckoTerminal's hourly candles.
+ * A reward with no price is warned about, never given a stand-in price;
+ * when GeckoTerminal cannot give the candles, no reward has a price.
  *
- * @param {number} timestamp - Unix timestamp (seconds)
- * @param {string} poolAddress - Liquidity pool address
- * @returns {Promise<number>} Price in USD (currently always fallback)
+ * @param {Array<{timestamp: number}>} rewards - The rewards, with their block times in unix seconds
+ * @param {Object} source - Where and how GeckoTerminal is asked (`geckoTerminalSource`)
+ * @returns {Promise<Array<number|null>>} Each reward's price in USD per XNT, or null where it has none
  */
-async function fetchHistoricalPrice(timestamp, poolAddress) {
-  console.log(
-    `Price lookup for pool ${poolAddress} at ${moment.unix(timestamp).format('YYYY-MM-DD')}: ` +
-    `using fallback $${loadConfig().fallbackPriceUsd} (no historical API available)`
-  );
-  return loadConfig().fallbackPriceUsd;
+async function lookUpPrices(rewards, source) {
+  let found;
+  try {
+    found = await priceTimes(rewards.map((reward) => reward.timestamp), source);
+  } catch (e) {
+    console.warn(
+      `Warning: no XNT prices, since GeckoTerminal could not give them (${e.message}). ` +
+      'Every price and value cell is empty, and the USD totals are 0.'
+    );
+    return rewards.map(() => null);
+  }
+  const unpriced = found.prices.filter((price) => price === null).length;
+  if (unpriced > 0) {
+    const earliest = found.earliestCandleSeconds === null
+      ? 'none'
+      : moment.unix(found.earliestCandleSeconds).utc().format('YYYY-MM-DD HH:mm');
+    console.warn(
+      `Warning: ${unpriced} of ${rewards.length} rewards have no XNT price, since GeckoTerminal has no ` +
+      `hourly candle for pool ${source.pool} in the day before them (its earliest given: ${earliest} UTC). ` +
+      'Their price and value cells are empty, and the USD totals leave them out.'
+    );
+  }
+  return found.prices;
 }
 
 /**
  * Parses command-line arguments using yargs.
  *
+ * @param {Object} config - The settings (`loadConfig`), which give the defaults.
  * @returns {Object} Parsed argv object.
  */
-function parseArguments() {
+function parseArguments(config) {
   return yargs(hideBin(process.argv))
-    .option('rpc-url', { type: 'string', default: loadConfig().rpcUrl })
+    .option('rpc-url', { type: 'string', default: config.rpcUrl })
     .option('vote-pubkey', { type: 'string', demandOption: true })
-    .option('liquidity-pool-address', { type: 'string', default: loadConfig().liquidityPoolAddress })
-    .option('fallback-price-usd', { type: 'number', default: loadConfig().fallbackPriceUsd })
-    .option('output', { alias: 'o', type: 'string', default: loadConfig().outputFile })
-    .option('verbose', { alias: 'v', type: 'boolean', default: loadConfig().verbose })
+    .option('liquidity-pool-address', { type: 'string', default: config.liquidityPoolAddress })
+    .option('output', { alias: 'o', type: 'string', default: config.outputFile })
+    .option('verbose', { alias: 'v', type: 'boolean', default: config.verbose })
     .option('epochs', {
       alias: 'n',
       type: 'number',
       description: 'Number of epochs to process (from current-1 backwards)',
-      default: loadConfig().epochs
+      default: config.epochs
     })
     .option('json', {
       type: 'boolean',
@@ -119,17 +145,16 @@ async function logRpcHealth(connection, verbose) {
 }
 
 /**
- * Retrieves the current vote account balance in XNT.
+ * Retrieves the current vote account balance and logs it in XNT.
  *
  * @param {Connection} connection - Solana connection instance.
  * @param {PublicKey} votePubkey - Vote account public key.
- * @returns {Promise<number>} Balance in XNT.
+ * @returns {Promise<bigint>} Balance in lamports.
  */
 async function getVoteBalance(connection, votePubkey) {
-  const balanceLamports = await connection.getBalance(votePubkey);
-  const balanceXNT = balanceLamports / 1_000_000_000;
-  console.log('Vote account balance:', balanceXNT.toFixed(6), 'XNT');
-  return balanceXNT;
+  const balanceLamports = BigInt(await connection.getBalance(votePubkey));
+  console.log('Vote account balance:', formatXnt(balanceLamports), 'XNT');
+  return balanceLamports;
 }
 
 /**
@@ -172,7 +197,8 @@ async function getCurrentEpoch(connection) {
  * @param {number} epoch - Epoch number to query.
  * @param {boolean} verbose - Whether to log raw response and errors.
  * @param {number} currentEpoch - Current epoch (for fallback time approximation).
- * @returns {Promise<Object|null>} Reward object if positive, null otherwise.
+ * @returns {Promise<{epoch: number, timestamp: number, lamports: bigint}|null>} The reward, with its time in
+ *   unix seconds and its amount in lamports, if positive; null otherwise.
  */
 async function fetchSingleEpochReward(connection, votePubkey, epoch, verbose, currentEpoch) {
   if (verbose) console.log(`Querying inflation reward for epoch ${epoch}...`);
@@ -187,8 +213,6 @@ async function fetchSingleEpochReward(connection, votePubkey, epoch, verbose, cu
     const reward = inflationReward?.[0] ?? null;
 
     if (reward?.amount > 0) {
-      const amountXNT = reward.amount / 1e9;
-
       let rewardTimestamp;
 
       // Try to get real block time from effectiveSlot
@@ -209,16 +233,7 @@ async function fetchSingleEpochReward(connection, votePubkey, epoch, verbose, cu
         if (verbose) console.log(`Using fallback timestamp for epoch ${epoch}`);
       }
 
-      const priceUSD = await fetchHistoricalPrice(rewardTimestamp, loadConfig().liquidityPoolAddress);
-      const valueUSD = (amountXNT * priceUSD).toFixed(4);
-
-      return {
-        epoch,
-        rewardDate: moment.unix(rewardTimestamp).utc().format('YYYY-MM-DD HH:mm:ss'),
-        xntAmount: amountXNT.toFixed(6),
-        priceUSD: priceUSD.toFixed(6),
-        valueUSD
-      };
+      return { epoch, timestamp: rewardTimestamp, lamports: BigInt(reward.amount) };
     }
 
     return null;
@@ -278,7 +293,7 @@ async function fetchRewardsForEpochs(connection, votePubkey, currentEpoch, verbo
       }
     } else {
       rewards.push(reward);
-      console.log(`Found reward in epoch ${epoch}: ${reward.xntAmount} XNT`);
+      console.log(`Found reward in epoch ${epoch}: ${formatXnt(reward.lamports)} XNT`);
     }
 
     processedCount++;
@@ -308,42 +323,27 @@ async function fetchRewardsForEpochs(connection, votePubkey, currentEpoch, verbo
 }
 
 /**
- * Generates and prints the final summary statistics.
+ * Prints the final summary statistics.
  *
- * @param {Array} rewards - Array of reward objects.
- * @param {number} totalEpochsProcessed - Total epochs queried.
- * @param {number} failedEpochs - Total failed queries.
- * @param {number} lowEpochFailures - Failed queries in early epochs (<=15).
- * @param {number} unexpectedFailures - Failed queries outside early range.
- * @param {number} expectedEpochs - Epochs expected to be queryable (processed - low failures).
+ * @param {Object} summary - The run's summary (`summarizeRewards` in summary.js).
  */
-function printSummary(rewards, totalEpochsProcessed, failedEpochs, lowEpochFailures, unexpectedFailures, expectedEpochs) {
-  if (rewards.length === 0) return;
-
-  const firstDate = moment(rewards[0].rewardDate).startOf('day');
-  const lastDate = moment(rewards[rewards.length - 1].rewardDate).startOf('day');
-  const days = lastDate.diff(firstDate, 'days') + 1;
-  const totalXNT = rewards.reduce((sum, r) => sum + parseFloat(r.xntAmount), 0);
-  const avgDaily = days > 0 ? (totalXNT / days).toFixed(6) : 'N/A';
-  const totalEpochsWithRewards = rewards.length;
-  const percentageExpectedWithRewards = expectedEpochs > 0 ? ((totalEpochsWithRewards / expectedEpochs) * 100).toFixed(2) : '0.00';
-  const avgPerEpoch = totalEpochsWithRewards > 0 ? (totalXNT / totalEpochsWithRewards).toFixed(6) : 'N/A';
-
+function printSummary(summary) {
   console.log('\nSummary:');
-  console.log(`  Final date range (approx): ${firstDate.format('YYYY-MM-DD')} to ${lastDate.format('YYYY-MM-DD')}`);
-  console.log(`  Days covered: ${days}`);
-  console.log(`  Total XNT earned: ${totalXNT.toFixed(6)}`);
-  console.log(`  Average $XNT earned per day: ${avgDaily}`);
-  console.log(`  Total epochs processed: ${totalEpochsProcessed}`);
-  console.log(`  Total epochs with rewards: ${totalEpochsWithRewards}`);
-  console.log(`  Percentage of Expected Epochs with Rewards (accounts for early chain rollback): ${percentageExpectedWithRewards}%`);
-  console.log(`  Average $XNT per epoch: ${avgPerEpoch}`);
-  console.log(`  Unexpected failed epoch queries: ${unexpectedFailures} (outside expected early range)`);
-  if (failedEpochs > 0) {
-    console.log(`  Failed epoch queries (due to early X1 chain roll-back, see "Unexpected failed epoch queries"): ${failedEpochs}`);
+  console.log(`  Final date range (approx): ${summary.dateRange}`);
+  console.log(`  Days covered: ${summary.days}`);
+  console.log(`  Total XNT earned: ${summary.totalXnt}`);
+  console.log(`  Average $XNT earned per day: ${summary.averageDailyXnt}`);
+  console.log(`  Total epochs processed: ${summary.totalEpochsProcessed}`);
+  console.log(`  Total epochs with rewards: ${summary.epochsWithRewards}`);
+  console.log(`  Rewards without an XNT price: ${summary.rewardsWithoutPrice}`);
+  console.log(`  Percentage of Expected Epochs with Rewards (accounts for early chain rollback): ${summary.percentageExpectedWithRewards}%`);
+  console.log(`  Average $XNT per epoch: ${summary.averagePerEpochXnt}`);
+  console.log(`  Unexpected failed epoch queries: ${summary.unexpectedFailures} (outside expected early range)`);
+  if (summary.failedEpochs > 0) {
+    console.log(`  Failed epoch queries (due to early X1 chain roll-back, see "Unexpected failed epoch queries"): ${summary.failedEpochs}`);
   }
-  if (lowEpochFailures > 0) {
-    console.log(`  Note: ${lowEpochFailures} failures in early epochs (<=15) are expected due to the X1 Mainnet Buenos Aires Reboot/rollback — pre-reboot ledger data is not queryable on the current chain.`);
+  if (summary.lowEpochFailures > 0) {
+    console.log(`  Note: ${summary.lowEpochFailures} failures in early epochs (<=15) are expected due to the X1 Mainnet Buenos Aires Reboot/rollback — pre-reboot ledger data is not queryable on the current chain.`);
   }
 }
 
@@ -352,7 +352,7 @@ function printSummary(rewards, totalEpochsProcessed, failedEpochs, lowEpochFailu
  */
 async function main() {
   const config = loadConfig();
-  const argv = parseArguments();
+  const argv = parseArguments(config);
 
   const connection = createConnection(argv['rpc-url']);
   const votePubkey = new PublicKey(argv['vote-pubkey']);
@@ -365,7 +365,7 @@ async function main() {
 
   const currentEpoch = await getCurrentEpoch(connection);
 
-  const { rewards, totalEpochsProcessed, failedEpochs, lowEpochFailures, unexpectedFailures, expectedEpochs } = await fetchRewardsForEpochs(
+  const { rewards, ...counts } = await fetchRewardsForEpochs(
     connection,
     votePubkey,
     currentEpoch,
@@ -380,24 +380,26 @@ async function main() {
   }
 
   // Sort oldest → newest
-  rewards.sort((a, b) => moment(a.rewardDate).unix() - moment(b.rewardDate).unix());
+  rewards.sort((a, b) => a.timestamp - b.timestamp);
 
-  // Compute cumulatives ONCE and attach to each reward object
-  let cumulativeXNT = 0;
-  let cumulativeUSD = 0;
-  rewards.forEach(r => {
-    cumulativeXNT += parseFloat(r.xntAmount);
-    cumulativeUSD += parseFloat(r.valueUSD);
-    r.cumulativeXNT = cumulativeXNT.toFixed(6);
-    r.cumulativeUSD = cumulativeUSD.toFixed(4);
-  });
+  const prices = await lookUpPrices(rewards, geckoTerminalSource({
+    apiUrl: config.geckoTerminalApiUrl,
+    network: config.geckoTerminalNetwork,
+    pool: argv['liquidity-pool-address'],
+    xntToken: config.xntTokenAddress,
+    usdToken: config.usdStablecoinAddress
+  }));
 
-  printSummary(rewards, totalEpochsProcessed, failedEpochs, lowEpochFailures, unexpectedFailures, expectedEpochs);
-  writeMainCsv(rewards, argv.output);
-  writeAnalyticsCsv(rewards, totalEpochsProcessed, failedEpochs, lowEpochFailures, unexpectedFailures, expectedEpochs);
+  // Amounts, prices, values and running totals, worked out once
+  const rows = rewardRows(rewards, prices);
+  const summary = summarizeRewards(rows, counts);
+
+  printSummary(summary);
+  writeMainCsv(rows, argv.output);
+  writeAnalyticsCsv(summary);
 
   // Optional JSON export
-  writeJsonExport(rewards, totalEpochsProcessed, failedEpochs, lowEpochFailures, unexpectedFailures, expectedEpochs, currentEpoch, activationEpoch, argv.json);
+  writeJsonExport(rows, summary, { currentEpoch, activationEpoch }, argv.json);
 }
 
 main().catch(err => {
