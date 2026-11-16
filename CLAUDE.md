@@ -10,23 +10,25 @@ never change anything in LP Ranger.
 Work in this repo, never in a copy of it. Code written to check something goes
 into the tests, so that later sessions reuse it instead of writing it again.
 
+## Prices
+
+Each reward's USD price is XNT's price in USDC.X, from GeckoTerminal's hourly
+candles for the configured pool, asked in the pool's own rate
+(`currency=token`). GeckoTerminal's USD candles for XNT (`currency=usd`) show
+one fixed price at every hour, so they are never used. GeckoTerminal's X1
+candles start on 2026-10-01; an earlier reward gets an empty price cell and a
+warning, never a stand-in price. `xnt-price.js` explains the rest.
+
 ## Tests
 
-The tests are in `test/`, on mocha, with their own `package.json`.
+The tests are in `test/`, on Node's own test runner, and ask nothing outside
+the computer: the script runs against a stand-in X1 endpoint and a stand-in
+GeckoTerminal served locally. `test/README.md` lists them.
 
 ```bash
 npm ci
-cd test
-npm ci
 npm test
 ```
-
-Every test but `test-known-bugs.js` runs the script against the live chain, at
-`https://rpc.mainnet.x1.xyz`; a Claude session needs that domain allowed in its
-network settings. The full-history test, `npm run test:full`, takes about two
-minutes. `npm run test:known-bugs` asks nothing outside the computer: it runs
-the script against `test/helpers/stand-in-x1.js`, a stand-in X1 endpoint served
-locally.
 
 The live chain gives a block time for every one of the validator's rewards, so
 the script's date estimate, which assumes 24-hour epochs where X1's run about
@@ -34,12 +36,8 @@ the script's date estimate, which assumes 24-hour epochs where X1's run about
 
 ## Known bugs
 
-`test/test-known-bugs.js` holds one test per known bug, declared with
-`knownBug` (`test/helpers/known-bug.js`), so it passes while the bug is
-present. A bug's fix makes its test fail; declare that test with `it` instead,
-in the same change.
-
-| Item | Bug |
-| --- | --- |
-| 6 | Every reward is valued at the $1.00 fallback price, and amounts are rounded to six decimal places, where XNT has nine. Summ's catalogue has no X1 XNT, so the USD values must come from this tool |
-| 8 | The live tests depend on the network, and two of their assertions can never fail. This one has no known-bug test |
+None is known. When one is found, it gets a test in
+`test/known-bugs.test.js`, declared with `knownBug`
+(`test/helpers/known-bug.js`), so the test passes while the bug is present.
+The bug's fix makes its test fail; declare that test with `it` instead, in the
+same change, among the tests of the code it is about.

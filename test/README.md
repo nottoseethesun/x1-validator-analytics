@@ -1,90 +1,43 @@
-# Test Suite for x1-validator-analytics
+# Tests for x1-validator-analytics
 
-This directory contains automated Mocha tests to catch regressions in `../fetch-total-validator-earnings.js`.
+The tests run on Node's own test runner, from the repo's top folder. They ask
+nothing outside the computer: the script runs against a stand-in X1 endpoint
+and a stand-in GeckoTerminal, both served on this computer, in a temp folder
+of its own that is removed afterwards, so nothing is written into the repo.
 
-All tests use the fixed vote pubkey:  
-`Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs`
+## Run
 
-## Requirements
-
-- Node.js >= 20
-- The main script and its modules (`../configLoader.js`, `../csvWriter.js`, `../jsonWriter.js`) in the parent directory
-- `../config.json` present (or defaults will be used)
-- Network access to the live X1 endpoint, `https://rpc.mainnet.x1.xyz`, for every test but `test-known-bugs.js`
-
-## Installation (once)
+Node 20 or later.
 
 ```bash
-cd test
-npm install
-```
-
-Note: A `package.json` already exists with the required dev dependencies, so this will install them. No need to run `npm init`.
-
-## Available Tests
-
-All tests use the fixed vote pubkey shown above.
-
-| File | What it checks | Typical run time | Command |
-| --- | --- | --- | --- |
-| test-rewards-basic.js | Small `--epochs 4` run: exit code 0, creates CSVs, exactly 4 rewards/days, zero failures | ~5–10 sec | `npm run test:basic` |
-| test-rewards-full.js | Full history (no `--epochs`): exit code 0, creates CSVs, exactly 99 rewards, exactly 15 early rollback failures, zero unexpected failures | ~30–60 sec | `npm run test:full` |
-| test-rollback-handling.js | `--epochs 50` run: exit code 0, creates CSVs, zero early failures (pre-reboot epochs not reached), zero unexpected failures | ~10–20 sec | `npm run test:rollback` |
-| test-json-export.js | `--json` flag with `--epochs 4`: exit code 0, creates both JSON files, detailed JSON has exactly 4 entries, analytics JSON has correct summary metrics (days=4, total positive, failures=0) | ~10–20 sec | `npm run test:json` |
-| test-known-bugs.js | Known bugs, one test each, run against a stand-in X1 endpoint on this computer, so no network is needed: each passes while its bug is present (see `../CLAUDE.md`) | ~2 sec | `npm run test:known-bugs` |
-
-## How to Run
-
-Run the full suite (recommended – all 23 tests; automatically cleans up old output files first):
-
-```bash
+npm ci
 npm test
 ```
 
-Run a single test group (also auto-cleans first):
+One file:
 
 ```bash
-npm run test:basic
-npm run test:full
-npm run test:rollback
-npm run test:json
-npm run test:known-bugs
+node --test test/xnt-price.test.js
 ```
 
-Filter tests by name (runs matching files):
+## Files
 
-```bash
-npm test -- --grep "basic"
-npm test -- --grep "json"
-npm test -- --grep "rollback"
-npm test -- --grep "full"
-```
+| File | What it checks |
+| --- | --- |
+| `fetch-total-validator-earnings.test.js` | The real script, run in a child process: one row per reward, oldest first, amounts and the XNT running total exact to nine decimal places, each price the close of its own hour's candle in the pool's own rate, values and the USD running total, a reward before GeckoTerminal's first candle left unpriced with a warning and never valued at $1.00, the failures of epochs 0 to 15 counted as expected, the json export, and a run with no prices when GeckoTerminal refuses |
+| `xnt-price.test.js` | Picking a time's candle, asking GeckoTerminal for the candles a thousand hours at a time, its refusals and the waits after a 429, and the check of the pool's pair |
+| `xnt-amount.test.js` | Writing lamports as XNT with all nine decimal places |
+| `rewards.test.js` | The report's rows, the summary and the analytics metrics |
 
-### Cleaning Output Files
+## Helpers
 
-Test runs automatically clean old output files (CSVs/JSONs) before execution (via `pretest` hook and explicit calls in individual scripts).
-
-To clean manually (e.g. after manual script runs or failed tests):
-
-```bash
-npm run clean
-```
-
-Files removed:
-
-- `xnt_rewards_with_prices.csv`
-- `xnt_rewards_analytics.csv`
-- `xnt_rewards.json`
-- `xnt_rewards_analytics.json`
-- `test-output.csv`
-
-## Tips
-
-- Full-history test (`npm run test:full`) takes longest — run it periodically to catch chain/RPC changes.
-- Increase timeout if RPC is slow: edit `package.json` or run `npm test -- --timeout 600000`
-- All tests are locked to the fixed vote pubkey above — update `test-utils.js` if testing other validators.
-
-## Exit Codes & Expectations
-
-- All tests pass → exit code 0
-- Any failure → exit code 1 + detailed error message
+- `helpers/stand-in-x1.js` serves a stand-in X1 json-rpc endpoint: a chain
+  at a time and epoch the test names, paying the same reward every epoch,
+  with early epochs that fail, as X1's do after its rollback, when the test
+  says so. `rewardSeconds` gives an epoch's reward time.
+- `helpers/stand-in-gecko-terminal.js` answers for a pool's hourly candles
+  as GeckoTerminal does, as a fetch or served on a local port. Asked in USD,
+  it gives one fixed price at every hour, as GeckoTerminal does for X1.
+- `helpers/run-script.js` runs the script against both stand-ins and reads
+  the files it wrote.
+- `helpers/known-bug.js` declares a test of a known bug (see `../CLAUDE.md`).

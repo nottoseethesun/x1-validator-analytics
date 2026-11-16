@@ -27,14 +27,23 @@ NodeJS 24.9.x - Earlier versions may work.
 
 Refer to the module or file header documentation.
 
+Each reward is priced in USD at its own time, from GeckoTerminal's hourly
+candles for the configured XDEX pool, WXNT / USDC.X. GeckoTerminal's X1
+candles start on 2026-10-01, so an earlier reward has empty price and value
+cells, with a warning. Amounts keep all nine of XNT's decimal places.
+
 ## Development
 
 ### Test
 
+The tests ask nothing outside your computer.
+
 ```bash
-cd test
-npm run test
+npm ci
+npm test
 ```
+
+[`test/README.md`](./test/README.md) describes them.
 
 ## Contributing
 
