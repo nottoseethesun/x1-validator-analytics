@@ -40,9 +40,10 @@ export const FIXED_USD_PRICE = 0.26583216633012297;
  * @param {string} [market.pool=POOL] - The pool's address
  * @param {string[]} [market.pair=[XNT, USDC_X]] - The pool's base and quote tokens' addresses
  * @param {number[]} [market.refusals=[]] - Statuses to answer instead of candles, one per request, from the first
+ * @param {boolean} [market.ignoresBefore=false] - Whether to answer the newest candles whatever `before_timestamp` says
  * @returns {{answer: function(string): {status: number, body: Object}, asked: string[]}} The stand-in
  */
-export function standInGeckoTerminal({ candles, pool = POOL, pair = [XNT, USDC_X], refusals = [] }) {
+export function standInGeckoTerminal({ candles, pool = POOL, pair = [XNT, USDC_X], refusals = [], ignoresBefore = false }) {
   const pending = [...refusals];
   const asked = [];
   const answer = (href) => {
@@ -53,7 +54,7 @@ export function standInGeckoTerminal({ candles, pool = POOL, pair = [XNT, USDC_X
     }
     if (pending.length > 0) return { status: pending.shift(), body: { status: { error_code: 'refused' } } };
     const query = url.searchParams;
-    const before = Number(query.get('before_timestamp') ?? Number.MAX_SAFE_INTEGER);
+    const before = ignoresBefore ? Number.MAX_SAFE_INTEGER : Number(query.get('before_timestamp') ?? Number.MAX_SAFE_INTEGER);
     const limit = Number(query.get('limit') ?? 100);
     const priceOf = (price) => {
       if (query.get('currency') === 'usd') return FIXED_USD_PRICE;

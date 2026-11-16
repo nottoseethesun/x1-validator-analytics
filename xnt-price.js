@@ -167,11 +167,13 @@ export async function fetchHourlyCandles(source, earliestSeconds, latestSeconds)
     candles.push(...page);
     if (page.length < CANDLES_PER_REQUEST) break;
     const oldest = Math.min(...page.map(([open]) => open));
-    if (oldest <= earliestSeconds - MAX_CANDLE_AGE_SECONDS) break;
+    // Stop once a day before the earliest time is in, or when no older candle came
+    if (oldest <= earliestSeconds - MAX_CANDLE_AGE_SECONDS || oldest > beforeSeconds) break;
     beforeSeconds = oldest - 1;
     await source.sleep(source.pageDelayMs);
   }
-  return candles.sort((a, b) => a[0] - b[0]);
+  const byOpen = new Map(candles.map((candle) => [candle[0], candle]));
+  return [...byOpen.values()].sort((a, b) => a[0] - b[0]);
 }
 
 /**

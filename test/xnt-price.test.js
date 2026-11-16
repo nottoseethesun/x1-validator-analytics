@@ -116,6 +116,15 @@ describe('fetchHourlyCandles', () => {
     assert.equal(candles[0][0], T0 + 1500 * HOUR);
   });
 
+  it('stops, keeping each candle once, when an answer brings no older candle', async () => {
+    const gecko = standInGeckoTerminal({ candles: candlesFrom(2500), ignoresBefore: true });
+
+    const candles = await fetchHourlyCandles(sourceFor(gecko).source, T0, T0 + 2499 * HOUR);
+
+    assert.equal(gecko.asked.length, 2);
+    assert.deepEqual(candles, candlesFrom(2500).slice(1500));
+  });
+
   it('gives no candles for times before the first', async () => {
     const gecko = standInGeckoTerminal({ candles: candlesFrom(3) });
     assert.deepEqual(await fetchHourlyCandles(sourceFor(gecko).source, T0 - 10 * HOUR, T0 - HOUR), []);
