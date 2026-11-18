@@ -41,17 +41,17 @@
  * - Requires Node.js ≥ 20 for stable ESM support.
  */
 
-import { Connection, PublicKey } from '@solana/web3.js';
-import yargs from 'yargs/yargs';
-import { hideBin } from 'yargs/helpers';
-import moment from 'moment';
-import { loadConfig } from './configLoader.js';
-import { writeMainCsv, writeAnalyticsCsv } from './csvWriter.js';
-import { writeJsonExport } from './jsonWriter.js';
-import { formatXnt } from './xnt-amount.js';
-import { geckoTerminalSource, priceTimes } from './xnt-price.js';
-import { rewardRows } from './rewards.js';
-import { summarizeRewards } from './summary.js';
+import { Connection, PublicKey } from "@solana/web3.js";
+import yargs from "yargs/yargs";
+import { hideBin } from "yargs/helpers";
+import moment from "moment";
+import { loadConfig } from "./configLoader.js";
+import { writeMainCsv, writeAnalyticsCsv } from "./csvWriter.js";
+import { writeJsonExport } from "./jsonWriter.js";
+import { formatXnt } from "./xnt-amount.js";
+import { geckoTerminalSource, priceTimes } from "./xnt-price.js";
+import { rewardRows } from "./rewards.js";
+import { summarizeRewards } from "./summary.js";
 
 /**
  * Prices each reward at its own time, from GeckoTerminal's hourly candles.
@@ -65,23 +65,30 @@ import { summarizeRewards } from './summary.js';
 async function lookUpPrices(rewards, source) {
   let found;
   try {
-    found = await priceTimes(rewards.map((reward) => reward.timestamp), source);
+    found = await priceTimes(
+      rewards.map((reward) => reward.timestamp),
+      source,
+    );
   } catch (e) {
     console.warn(
       `Warning: no XNT prices, since GeckoTerminal could not give them (${e.message}). ` +
-      'Every price and value cell is empty, and the USD totals are 0.'
+        "Every price and value cell is empty, and the USD totals are 0.",
     );
     return rewards.map(() => null);
   }
   const unpriced = found.prices.filter((price) => price === null).length;
   if (unpriced > 0) {
-    const earliest = found.earliestCandleSeconds === null
-      ? 'none'
-      : moment.unix(found.earliestCandleSeconds).utc().format('YYYY-MM-DD HH:mm');
+    const earliest =
+      found.earliestCandleSeconds === null
+        ? "none"
+        : moment
+            .unix(found.earliestCandleSeconds)
+            .utc()
+            .format("YYYY-MM-DD HH:mm");
     console.warn(
       `Warning: ${unpriced} of ${rewards.length} rewards have no XNT price, since GeckoTerminal has no ` +
-      `hourly candle for pool ${source.pool} in the day before them (its earliest given: ${earliest} UTC). ` +
-      'Their price and value cells are empty, and the USD totals leave them out.'
+        `hourly candle for pool ${source.pool} in the day before them (its earliest given: ${earliest} UTC). ` +
+        "Their price and value cells are empty, and the USD totals leave them out.",
     );
   }
   return found.prices;
@@ -95,23 +102,29 @@ async function lookUpPrices(rewards, source) {
  */
 function parseArguments(config) {
   return yargs(hideBin(process.argv))
-    .option('rpc-url', { type: 'string', default: config.rpcUrl })
-    .option('vote-pubkey', { type: 'string', demandOption: true })
-    .option('liquidity-pool-address', { type: 'string', default: config.liquidityPoolAddress })
-    .option('output', { alias: 'o', type: 'string', default: config.outputFile })
-    .option('verbose', { alias: 'v', type: 'boolean', default: config.verbose })
-    .option('epochs', {
-      alias: 'n',
-      type: 'number',
-      description: 'Number of epochs to process (from current-1 backwards)',
-      default: config.epochs
+    .option("rpc-url", { type: "string", default: config.rpcUrl })
+    .option("vote-pubkey", { type: "string", demandOption: true })
+    .option("liquidity-pool-address", {
+      type: "string",
+      default: config.liquidityPoolAddress,
     })
-    .option('json', {
-      type: 'boolean',
-      description: 'Export full data as JSON file (xnt_rewards.json)',
-      default: false
+    .option("output", {
+      alias: "o",
+      type: "string",
+      default: config.outputFile,
     })
-    .argv;
+    .option("verbose", { alias: "v", type: "boolean", default: config.verbose })
+    .option("epochs", {
+      alias: "n",
+      type: "number",
+      description: "Number of epochs to process (from current-1 backwards)",
+      default: config.epochs,
+    })
+    .option("json", {
+      type: "boolean",
+      description: "Export full data as JSON file (xnt_rewards.json)",
+      default: false,
+    }).argv;
 }
 
 /**
@@ -121,7 +134,7 @@ function parseArguments(config) {
  * @returns {Connection} Initialized Solana Connection.
  */
 function createConnection(rpcUrl) {
-  return new Connection(rpcUrl, 'confirmed');
+  return new Connection(rpcUrl, "confirmed");
 }
 
 /**
@@ -136,11 +149,11 @@ async function logRpcHealth(connection, verbose) {
 
   try {
     const epochInfo = await connection.getEpochInfo();
-    console.log('RPC Health - Current Epoch:', epochInfo.epoch);
-    console.log('Absolute Slot:', epochInfo.absoluteSlot);
-    console.log('Epoch Start Slot:', epochInfo.epochStartSlot || 'undefined');
+    console.log(`RPC Health - Current Epoch: ${epochInfo.epoch}`);
+    console.log(`Absolute Slot: ${epochInfo.absoluteSlot}`);
+    console.log("Epoch Start Slot:", epochInfo.epochStartSlot || "undefined");
   } catch (e) {
-    console.error('RPC health check failed:', e.message);
+    console.error("RPC health check failed:", e.message);
   }
 }
 
@@ -153,7 +166,7 @@ async function logRpcHealth(connection, verbose) {
  */
 async function getVoteBalance(connection, votePubkey) {
   const balanceLamports = BigInt(await connection.getBalance(votePubkey));
-  console.log('Vote account balance:', formatXnt(balanceLamports), 'XNT');
+  console.log("Vote account balance:", formatXnt(balanceLamports), "XNT");
   return balanceLamports;
 }
 
@@ -167,9 +180,10 @@ async function getVoteBalance(connection, votePubkey) {
  */
 async function findVoteAccount(connection, votePubkey) {
   const voteAccounts = await connection.getVoteAccounts();
-  const myVoteAccount = [...voteAccounts.current, ...voteAccounts.delinquent].find(
-    acc => acc.votePubkey === votePubkey.toBase58()
-  );
+  const myVoteAccount = [
+    ...voteAccounts.current,
+    ...voteAccounts.delinquent,
+  ].find((acc) => acc.votePubkey === votePubkey.toBase58());
 
   if (!myVoteAccount) {
     throw new Error(`Vote account not found: ${votePubkey.toBase58()}`);
@@ -179,14 +193,15 @@ async function findVoteAccount(connection, votePubkey) {
 }
 
 /**
- * Fetches the current epoch number from the chain.
+ * Fetches the current epoch number from the chain. web3.js gives it as a
+ * BigInt; an epoch number is small, so it is counted as a number here.
  *
  * @param {Connection} connection - Solana connection instance.
  * @returns {Promise<number>} Current epoch number.
  */
 async function getCurrentEpoch(connection) {
   const epochInfo = await connection.getEpochInfo();
-  return epochInfo.epoch;
+  return Number(epochInfo.epoch);
 }
 
 /**
@@ -200,14 +215,32 @@ async function getCurrentEpoch(connection) {
  * @returns {Promise<{epoch: number, timestamp: number, lamports: bigint}|null>} The reward, with its time in
  *   unix seconds and its amount in lamports, if positive; null otherwise.
  */
-async function fetchSingleEpochReward(connection, votePubkey, epoch, verbose, currentEpoch) {
+async function fetchSingleEpochReward(
+  connection,
+  votePubkey,
+  epoch,
+  verbose,
+  currentEpoch,
+) {
   if (verbose) console.log(`Querying inflation reward for epoch ${epoch}...`);
 
   try {
-    const inflationReward = await connection.getInflationReward([votePubkey], epoch);
+    const inflationReward = await connection.getInflationReward(
+      [votePubkey],
+      epoch,
+    );
 
     if (verbose) {
-      console.log(`Raw response for epoch ${epoch}:`, JSON.stringify(inflationReward, null, 2));
+      // web3.js gives the amounts and slots as BigInts, which JSON writes
+      // only as strings
+      console.log(
+        `Raw response for epoch ${epoch}:`,
+        JSON.stringify(
+          inflationReward,
+          (_key, value) => (typeof value === "bigint" ? `${value}` : value),
+          2,
+        ),
+      );
     }
 
     const reward = inflationReward?.[0] ?? null;
@@ -215,25 +248,37 @@ async function fetchSingleEpochReward(connection, votePubkey, epoch, verbose, cu
     if (reward?.amount > 0) {
       let rewardTimestamp;
 
-      // Try to get real block time from effectiveSlot
+      // Try to get real block time from effectiveSlot. web3.js gives a block
+      // time as a BigInt of unix seconds, or null when it has none.
       if (reward.effectiveSlot !== undefined) {
         try {
-          rewardTimestamp = await connection.getBlockTime(reward.effectiveSlot);
+          const blockTime = await connection.getBlockTime(reward.effectiveSlot);
+          rewardTimestamp = blockTime === null ? null : Number(blockTime);
           if (verbose && rewardTimestamp) {
-            console.log(`Using real block time for epoch ${epoch}: ${rewardTimestamp}`);
+            console.log(
+              `Using real block time for epoch ${epoch}: ${rewardTimestamp}`,
+            );
           }
         } catch (e) {
-          if (verbose) console.warn(`getBlockTime failed for slot ${reward.effectiveSlot} in epoch ${epoch}: ${e.message}`);
+          if (verbose)
+            console.warn(
+              `getBlockTime failed for slot ${reward.effectiveSlot} in epoch ${epoch}: ${e.message}`,
+            );
         }
       }
 
       // Fallback to approximation if no slot or getBlockTime failed
       if (!rewardTimestamp) {
-        rewardTimestamp = Math.floor(Date.now() / 1000) - ((currentEpoch - epoch) * 24 * 60 * 60);
+        rewardTimestamp =
+          Math.floor(Date.now() / 1000) - (currentEpoch - epoch) * 24 * 60 * 60;
         if (verbose) console.log(`Using fallback timestamp for epoch ${epoch}`);
       }
 
-      return { epoch, timestamp: rewardTimestamp, lamports: BigInt(reward.amount) };
+      return {
+        epoch,
+        timestamp: rewardTimestamp,
+        lamports: BigInt(reward.amount),
+      };
     }
 
     return null;
@@ -252,9 +297,15 @@ async function fetchSingleEpochReward(connection, votePubkey, epoch, verbose, cu
 function displayProgressBar(current, total) {
   const barLength = 30;
   const filled = Math.round((current / total) * barLength);
-  const bar = '\x1b[42m' + '█'.repeat(filled) + '\x1b[0m' + '▒'.repeat(barLength - filled);
+  const bar =
+    "\x1b[42m" +
+    "█".repeat(filled) +
+    "\x1b[0m" +
+    "▒".repeat(barLength - filled);
   const percent = ((current / total) * 100).toFixed(0);
-  process.stdout.write(`\r\x1b[7m Progress: [${bar}] ${percent}% (${current}/${total} epochs) \x1b[0m`);
+  process.stdout.write(
+    `\r\x1b[7m Progress: [${bar}] ${percent}% (${current}/${total} epochs) \x1b[0m`,
+  );
 }
 
 /**
@@ -267,22 +318,34 @@ function displayProgressBar(current, total) {
  * @param {number|null} maxEpochs - Max number of epochs to process (null = unlimited).
  * @returns {Promise<{rewards: Array, totalEpochsProcessed: number, failedEpochs: number, lowEpochFailures: number, unexpectedFailures: number, expectedEpochs: number}>}
  */
-async function fetchRewardsForEpochs(connection, votePubkey, currentEpoch, verbose, maxEpochs = null) {
+async function fetchRewardsForEpochs(
+  connection,
+  votePubkey,
+  currentEpoch,
+  verbose,
+  maxEpochs = null,
+) {
   const rewards = [];
   let processedCount = 0;
   let failedCount = 0;
   let lowEpochFailures = 0;
   let unexpectedFailures = 0;
 
-  const estimatedTotal = maxEpochs !== null && maxEpochs !== undefined ? maxEpochs : currentEpoch;
+  const estimatedTotal =
+    maxEpochs !== null && maxEpochs !== undefined ? maxEpochs : currentEpoch;
 
   console.log(`Processing epochs from ${currentEpoch - 1} back to epoch 0...`);
 
-  const barLength = 30;
   const updateInterval = 5;
 
   for (let epoch = currentEpoch - 1; epoch >= 0; epoch--) {
-    const reward = await fetchSingleEpochReward(connection, votePubkey, epoch, verbose, currentEpoch);
+    const reward = await fetchSingleEpochReward(
+      connection,
+      votePubkey,
+      epoch,
+      verbose,
+      currentEpoch,
+    );
 
     if (reward === null) {
       failedCount++;
@@ -293,33 +356,48 @@ async function fetchRewardsForEpochs(connection, votePubkey, currentEpoch, verbo
       }
     } else {
       rewards.push(reward);
-      console.log(`Found reward in epoch ${epoch}: ${formatXnt(reward.lamports)} XNT`);
+      console.log(
+        `Found reward in epoch ${epoch}: ${formatXnt(reward.lamports)} XNT`,
+      );
     }
 
     processedCount++;
 
     if (!verbose && processedCount % updateInterval === 0) {
-      const percent = ((processedCount / estimatedTotal) * 100).toFixed(0);
-      const filled = Math.round((processedCount / estimatedTotal) * barLength);
-      const bar = '\x1b[42m' + '█'.repeat(filled) + '\x1b[0m' + '▒'.repeat(barLength - filled);
-      process.stdout.write(`\r\x1b[7m Progress: [${bar}] ${percent}% (${processedCount}/${estimatedTotal} epochs) \x1b[0m`);
+      displayProgressBar(processedCount, estimatedTotal);
     }
 
-    if (maxEpochs !== null && maxEpochs !== undefined && processedCount >= maxEpochs) {
-      if (verbose) console.log(`Reached requested limit of ${maxEpochs} epochs. Stopping.`);
+    if (
+      maxEpochs !== null &&
+      maxEpochs !== undefined &&
+      processedCount >= maxEpochs
+    ) {
+      if (verbose)
+        console.log(
+          `Reached requested limit of ${maxEpochs} epochs. Stopping.`,
+        );
       break;
     }
   }
 
-  if (!verbose) process.stdout.write('\r' + ' '.repeat(80) + '\r');
+  if (!verbose) process.stdout.write("\r" + " ".repeat(80) + "\r");
 
   if (failedCount > 0) {
-    console.warn(`Warning: ${failedCount} epochs failed to query (skipped gracefully).`);
+    console.warn(
+      `Warning: ${failedCount} epochs failed to query (skipped gracefully).`,
+    );
   }
 
   const expectedEpochs = processedCount - lowEpochFailures;
 
-  return { rewards, totalEpochsProcessed: processedCount, failedEpochs: failedCount, lowEpochFailures, unexpectedFailures, expectedEpochs };
+  return {
+    rewards,
+    totalEpochsProcessed: processedCount,
+    failedEpochs: failedCount,
+    lowEpochFailures,
+    unexpectedFailures,
+    expectedEpochs,
+  };
 }
 
 /**
@@ -328,7 +406,7 @@ async function fetchRewardsForEpochs(connection, votePubkey, currentEpoch, verbo
  * @param {Object} summary - The run's summary (`summarizeRewards` in summary.js).
  */
 function printSummary(summary) {
-  console.log('\nSummary:');
+  console.log("\nSummary:");
   console.log(`  Final date range (approx): ${summary.dateRange}`);
   console.log(`  Days covered: ${summary.days}`);
   console.log(`  Total XNT earned: ${summary.totalXnt}`);
@@ -336,14 +414,22 @@ function printSummary(summary) {
   console.log(`  Total epochs processed: ${summary.totalEpochsProcessed}`);
   console.log(`  Total epochs with rewards: ${summary.epochsWithRewards}`);
   console.log(`  Rewards without an XNT price: ${summary.rewardsWithoutPrice}`);
-  console.log(`  Percentage of Expected Epochs with Rewards (accounts for early chain rollback): ${summary.percentageExpectedWithRewards}%`);
+  console.log(
+    `  Percentage of Expected Epochs with Rewards (accounts for early chain rollback): ${summary.percentageExpectedWithRewards}%`,
+  );
   console.log(`  Average $XNT per epoch: ${summary.averagePerEpochXnt}`);
-  console.log(`  Unexpected failed epoch queries: ${summary.unexpectedFailures} (outside expected early range)`);
+  console.log(
+    `  Unexpected failed epoch queries: ${summary.unexpectedFailures} (outside expected early range)`,
+  );
   if (summary.failedEpochs > 0) {
-    console.log(`  Failed epoch queries (due to early X1 chain roll-back, see "Unexpected failed epoch queries"): ${summary.failedEpochs}`);
+    console.log(
+      `  Failed epoch queries (due to early X1 chain roll-back, see "Unexpected failed epoch queries"): ${summary.failedEpochs}`,
+    );
   }
   if (summary.lowEpochFailures > 0) {
-    console.log(`  Note: ${summary.lowEpochFailures} failures in early epochs (<=15) are expected due to the X1 Mainnet Buenos Aires Reboot/rollback — pre-reboot ledger data is not queryable on the current chain.`);
+    console.log(
+      `  Note: ${summary.lowEpochFailures} failures in early epochs (<=15) are expected due to the X1 Mainnet Buenos Aires Reboot/rollback — pre-reboot ledger data is not queryable on the current chain.`,
+    );
   }
 }
 
@@ -354,14 +440,17 @@ async function main() {
   const config = loadConfig();
   const argv = parseArguments(config);
 
-  const connection = createConnection(argv['rpc-url']);
-  const votePubkey = new PublicKey(argv['vote-pubkey']);
+  const connection = createConnection(argv["rpc-url"]);
+  const votePubkey = new PublicKey(argv["vote-pubkey"]);
 
   await logRpcHealth(connection, argv.verbose);
   await getVoteBalance(connection, votePubkey);
 
   const myVoteAccount = await findVoteAccount(connection, votePubkey);
-  const activationEpoch = myVoteAccount.epochCredits?.[0]?.[0] || 0;
+  // The first epoch the account earned credits in, a BigInt from web3.js
+  const firstCreditEpoch = myVoteAccount.epochCredits?.[0]?.[0];
+  const activationEpoch =
+    firstCreditEpoch === undefined ? 0 : Number(firstCreditEpoch);
 
   const currentEpoch = await getCurrentEpoch(connection);
 
@@ -370,25 +459,28 @@ async function main() {
     votePubkey,
     currentEpoch,
     argv.verbose,
-    argv.epochs
+    argv.epochs,
   );
 
   if (rewards.length === 0) {
-    console.log('No rewards found.');
-    console.log('Tip: Check validator dashboard for credit history.');
+    console.log("No rewards found.");
+    console.log("Tip: Check validator dashboard for credit history.");
     return;
   }
 
   // Sort oldest → newest
   rewards.sort((a, b) => a.timestamp - b.timestamp);
 
-  const prices = await lookUpPrices(rewards, geckoTerminalSource({
-    apiUrl: config.geckoTerminalApiUrl,
-    network: config.geckoTerminalNetwork,
-    pool: argv['liquidity-pool-address'],
-    xntToken: config.xntTokenAddress,
-    usdToken: config.usdStablecoinAddress
-  }));
+  const prices = await lookUpPrices(
+    rewards,
+    geckoTerminalSource({
+      apiUrl: config.geckoTerminalApiUrl,
+      network: config.geckoTerminalNetwork,
+      pool: argv["liquidity-pool-address"],
+      xntToken: config.xntTokenAddress,
+      usdToken: config.usdStablecoinAddress,
+    }),
+  );
 
   // Amounts, prices, values and running totals, worked out once
   const rows = rewardRows(rewards, prices);
@@ -402,7 +494,7 @@ async function main() {
   writeJsonExport(rows, summary, { currentEpoch, activationEpoch }, argv.json);
 }
 
-main().catch(err => {
-  console.error('Error:', err.message);
+main().catch((err) => {
+  console.error("Error:", err.message);
   process.exit(1);
 });

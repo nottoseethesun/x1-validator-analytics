@@ -9,21 +9,23 @@
  * X1 endpoint, so the run asks nothing outside the computer.
  */
 
-import { execFile } from 'node:child_process';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { promisify } from 'node:util';
-import { fileURLToPath } from 'node:url';
-import { parse } from 'csv-parse/sync';
+import { execFile } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
+import { parse } from "csv-parse/sync";
 
 const execFileAsync = promisify(execFile);
 
 /** The script under test. */
-const SCRIPT = fileURLToPath(new URL('../../fetch-total-validator-earnings.js', import.meta.url));
+const SCRIPT = fileURLToPath(
+  new URL("../../fetch-total-validator-earnings.js", import.meta.url),
+);
 
 /** The vote account the tests ask about. */
-export const VOTE_PUBKEY = 'Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs';
+export const VOTE_PUBKEY = "Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs";
 
 /**
  * Reads a csv the script wrote, if it wrote it.
@@ -33,7 +35,11 @@ export const VOTE_PUBKEY = 'Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs';
  */
 function readCsv(file) {
   if (!fs.existsSync(file)) return null;
-  return parse(fs.readFileSync(file, 'utf8'), { bom: true, columns: true, skip_empty_lines: true });
+  return parse(fs.readFileSync(file, "utf8"), {
+    bom: true,
+    columns: true,
+    skip_empty_lines: true,
+  });
 }
 
 /**
@@ -43,7 +49,7 @@ function readCsv(file) {
  * @returns {*} Its contents, or null when there is no such file
  */
 function readJson(file) {
-  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : null;
+  return fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : null;
 }
 
 /**
@@ -57,23 +63,44 @@ function readJson(file) {
  *   analytics: ?Array<Object>, json: ?Object, analyticsJson: ?Array<Object>}>} How it ended, and what it wrote
  */
 export async function runScript({ rpcUrl, geckoTerminalUrl, args = [] }) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'x1-validator-analytics-test-'));
+  const dir = fs.mkdtempSync(
+    path.join(os.tmpdir(), "x1-validator-analytics-test-"),
+  );
   try {
-    fs.writeFileSync(path.join(dir, 'config.json'), JSON.stringify({ geckoTerminalApiUrl: geckoTerminalUrl }));
-    const output = path.join(dir, 'rewards.csv');
-    const argv = [SCRIPT, '--rpc-url', rpcUrl, '--vote-pubkey', VOTE_PUBKEY, '--output', output, ...args];
+    fs.writeFileSync(
+      path.join(dir, "config.json"),
+      JSON.stringify({ geckoTerminalApiUrl: geckoTerminalUrl }),
+    );
+    const output = path.join(dir, "rewards.csv");
+    const argv = [
+      SCRIPT,
+      "--rpc-url",
+      rpcUrl,
+      "--vote-pubkey",
+      VOTE_PUBKEY,
+      "--output",
+      output,
+      ...args,
+    ];
     let ended;
     try {
-      ended = { code: 0, ...(await execFileAsync(process.execPath, argv, { cwd: dir })) };
+      ended = {
+        code: 0,
+        ...(await execFileAsync(process.execPath, argv, { cwd: dir })),
+      };
     } catch (error) {
-      ended = { code: error.code ?? 1, stdout: error.stdout ?? '', stderr: error.stderr ?? String(error) };
+      ended = {
+        code: error.code ?? 1,
+        stdout: error.stdout ?? "",
+        stderr: error.stderr ?? String(error),
+      };
     }
     return {
       ...ended,
       rows: readCsv(output),
-      analytics: readCsv(path.join(dir, 'xnt_rewards_analytics.csv')),
-      json: readJson(path.join(dir, 'xnt_rewards.json')),
-      analyticsJson: readJson(path.join(dir, 'xnt_rewards_analytics.json'))
+      analytics: readCsv(path.join(dir, "xnt_rewards_analytics.csv")),
+      json: readJson(path.join(dir, "xnt_rewards.json")),
+      analyticsJson: readJson(path.join(dir, "xnt_rewards_analytics.json")),
     };
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });

@@ -17,16 +17,16 @@
  * serves it on a free local port for the script run in a child process.
  */
 
-import http from 'node:http';
+import http from "node:http";
 
 /** XNT's wrapped mint, the base token of the default pool. */
-export const XNT = 'So11111111111111111111111111111111111111112';
+export const XNT = "So11111111111111111111111111111111111111112";
 
 /** USDC.X's mint, the quote token of the default pool. */
-export const USDC_X = 'B69chRzqzDCmdB5WYB8NRu5Yv5ZA95ABiZcdzCgGm9Tq';
+export const USDC_X = "B69chRzqzDCmdB5WYB8NRu5Yv5ZA95ABiZcdzCgGm9Tq";
 
 /** The default pool, XDEX's WXNT / USDC.X. */
-export const POOL = 'CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR';
+export const POOL = "CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR";
 
 /** GeckoTerminal's fixed USD price for XNT, which its USD candles show at every hour. */
 export const FIXED_USD_PRICE = 0.26583216633012297;
@@ -43,30 +43,62 @@ export const FIXED_USD_PRICE = 0.26583216633012297;
  * @param {boolean} [market.ignoresBefore=false] - Whether to answer the newest candles whatever `before_timestamp` says
  * @returns {{answer: function(string): {status: number, body: Object}, asked: string[]}} The stand-in
  */
-export function standInGeckoTerminal({ candles, pool = POOL, pair = [XNT, USDC_X], refusals = [], ignoresBefore = false }) {
+export function standInGeckoTerminal({
+  candles,
+  pool = POOL,
+  pair = [XNT, USDC_X],
+  refusals = [],
+  ignoresBefore = false,
+}) {
   const pending = [...refusals];
   const asked = [];
   const answer = (href) => {
     asked.push(href);
     const url = new URL(href);
     if (url.pathname !== `/networks/x1-network/pools/${pool}/ohlcv/hour`) {
-      return { status: 404, body: { errors: [{ status: '404', title: 'Not Found' }] } };
+      return {
+        status: 404,
+        body: { errors: [{ status: "404", title: "Not Found" }] },
+      };
     }
-    if (pending.length > 0) return { status: pending.shift(), body: { status: { error_code: 'refused' } } };
+    if (pending.length > 0)
+      return {
+        status: pending.shift(),
+        body: { status: { error_code: "refused" } },
+      };
     const query = url.searchParams;
-    const before = ignoresBefore ? Number.MAX_SAFE_INTEGER : Number(query.get('before_timestamp') ?? Number.MAX_SAFE_INTEGER);
-    const limit = Number(query.get('limit') ?? 100);
+    const before = ignoresBefore
+      ? Number.MAX_SAFE_INTEGER
+      : Number(query.get("before_timestamp") ?? Number.MAX_SAFE_INTEGER);
+    const limit = Number(query.get("limit") ?? 100);
     const priceOf = (price) => {
-      if (query.get('currency') === 'usd') return FIXED_USD_PRICE;
-      return query.get('token') === XNT ? price : 1 / price;
+      if (query.get("currency") === "usd") return FIXED_USD_PRICE;
+      return query.get("token") === XNT ? price : 1 / price;
     };
     const list = candles
       .filter(([open]) => open <= before)
       .sort((a, b) => b[0] - a[0])
       .slice(0, limit)
-      .map(([open, price]) => [open, priceOf(price), priceOf(price), priceOf(price), priceOf(price), 100]);
+      .map(([open, price]) => [
+        open,
+        priceOf(price),
+        priceOf(price),
+        priceOf(price),
+        priceOf(price),
+        100,
+      ]);
     const meta = { base: { address: pair[0] }, quote: { address: pair[1] } };
-    return { status: 200, body: { data: { id: 'stand-in', type: 'ohlcv_request_response', attributes: { ohlcv_list: list } }, meta } };
+    return {
+      status: 200,
+      body: {
+        data: {
+          id: "stand-in",
+          type: "ohlcv_request_response",
+          attributes: { ohlcv_list: list },
+        },
+        meta,
+      },
+    };
   };
   return { answer, asked };
 }
@@ -80,7 +112,10 @@ export function standInGeckoTerminal({ candles, pool = POOL, pair = [XNT, USDC_X
 export function standInGeckoFetch(geckoTerminal) {
   return async (url) => {
     const { status, body } = geckoTerminal.answer(String(url));
-    return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { "content-type": "application/json" },
+    });
   };
 }
 
@@ -92,20 +127,22 @@ export function standInGeckoFetch(geckoTerminal) {
  */
 export function serveStandInGeckoTerminal(geckoTerminal) {
   const server = http.createServer((request, response) => {
-    const { status, body } = geckoTerminal.answer(`http://${request.headers.host}${request.url}`);
+    const { status, body } = geckoTerminal.answer(
+      `http://${request.headers.host}${request.url}`,
+    );
     response.statusCode = status;
-    response.setHeader('content-type', 'application/json');
+    response.setHeader("content-type", "application/json");
     response.end(JSON.stringify(body));
   });
   return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
+    server.listen(0, "127.0.0.1", () => {
       resolve({
         url: `http://127.0.0.1:${server.address().port}`,
         close: () =>
           new Promise((done) => {
             server.close(() => done());
             server.closeAllConnections();
-          })
+          }),
       });
     });
   });

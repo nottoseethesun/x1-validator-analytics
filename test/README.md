@@ -7,12 +7,15 @@ of its own that is removed afterwards, so nothing is written into the repo.
 
 ## Run
 
-Node 20 or later.
+Node 22 or later.
 
 ```bash
 npm ci
 npm test
 ```
+
+`npm run check` runs them with coverage, failing below 80% of lines
+covered, after the lint and before the security audits.
 
 One file:
 
@@ -24,10 +27,11 @@ node --test test/xnt-price.test.js
 
 | File | What it checks |
 | --- | --- |
-| `fetch-total-validator-earnings.test.js` | The real script, run in a child process: one row per reward, oldest first, amounts and the XNT running total exact to nine decimal places, each price the close of its own hour's candle in the pool's own rate, values and the USD running total, a reward before GeckoTerminal's first candle left unpriced with a warning and never valued at $1.00, the failures of epochs 0 to 15 counted as expected, the json export, and a run with no prices when GeckoTerminal refuses |
+| `fetch-total-validator-earnings.test.js` | The real script, run in a child process: one row per reward, oldest first, amounts and the XNT running total exact to nine decimal places, each price the close of its own hour's candle in the pool's own rate, values and the USD running total, a reward before GeckoTerminal's first candle left unpriced with a warning and never valued at $1.00, the failures of epochs 0 to 15 counted as expected, the json export, a run with no prices when GeckoTerminal refuses, and a verbose run, which prints each epoch's raw answer and still finds every reward |
 | `xnt-price.test.js` | Picking a time's candle, asking GeckoTerminal for the candles a thousand hours at a time, its refusals and the waits after a 429, and the check of the pool's pair |
 | `xnt-amount.test.js` | Writing lamports as XNT with all nine decimal places |
 | `rewards.test.js` | The report's rows, the summary and the analytics metrics |
+| `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, the copy of crypto-price-fetchers' `unlock-api-keys.sh`, and the pin of crypto-price-fetchers |
 
 ## Helpers
 

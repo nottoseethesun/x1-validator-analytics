@@ -26,7 +26,7 @@
  */
 
 /** GeckoTerminal's public api, which needs no key. */
-export const GECKO_TERMINAL_API_URL = 'https://api.geckoterminal.com/api/v2';
+export const GECKO_TERMINAL_API_URL = "https://api.geckoterminal.com/api/v2";
 
 /** How long before a time its candle may open and still give its price, in seconds: a day. */
 export const MAX_CANDLE_AGE_SECONDS = 24 * 60 * 60;
@@ -65,7 +65,7 @@ export function geckoTerminalSource(settings) {
     sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
     retryDelaysMs: RETRY_DELAYS_MS,
     pageDelayMs: PAGE_DELAY_MS,
-    ...settings
+    ...settings,
   };
 }
 
@@ -111,15 +111,17 @@ async function fetchCandlePage(source, beforeSeconds) {
     `&currency=token&token=${source.xntToken}`;
   for (let attempt = 0; ; attempt++) {
     const response = await source.fetch(url, {
-      headers: { Accept: 'application/json' },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS)
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
     if (response.status === 429 && attempt < source.retryDelaysMs.length) {
       await source.sleep(source.retryDelaysMs[attempt]);
       continue;
     }
     if (!response.ok) {
-      throw new Error(`GeckoTerminal answered ${response.status} for pool ${source.pool}`);
+      throw new Error(
+        `GeckoTerminal answered ${response.status} for pool ${source.pool}`,
+      );
     }
     return response.json();
   }
@@ -136,17 +138,23 @@ async function fetchCandlePage(source, beforeSeconds) {
  */
 function candlesOf(answer, source) {
   const list = answer?.data?.attributes?.ohlcv_list;
-  if (!Array.isArray(list)) throw new Error(`GeckoTerminal gave no candle list for pool ${source.pool}`);
+  if (!Array.isArray(list))
+    throw new Error(
+      `GeckoTerminal gave no candle list for pool ${source.pool}`,
+    );
   if (list.length === 0) return [];
   const pair = [answer?.meta?.base?.address, answer?.meta?.quote?.address];
   if (!pair.includes(source.xntToken) || !pair.includes(source.usdToken)) {
     throw new Error(
-      `Pool ${source.pool} does not pair XNT (${source.xntToken}) with the USD stablecoin (${source.usdToken})`
+      `Pool ${source.pool} does not pair XNT (${source.xntToken}) with the USD stablecoin (${source.usdToken})`,
     );
   }
   return list
     .map((candle) => [Number(candle[0]), Number(candle[4])])
-    .filter(([open, close]) => Number.isFinite(open) && Number.isFinite(close) && close > 0);
+    .filter(
+      ([open, close]) =>
+        Number.isFinite(open) && Number.isFinite(close) && close > 0,
+    );
 }
 
 /**
@@ -159,16 +167,27 @@ function candlesOf(answer, source) {
  * @returns {Promise<Array<Array<number>>>} The candles as [open time, close], oldest first
  * @throws {Error} When GeckoTerminal cannot give them
  */
-export async function fetchHourlyCandles(source, earliestSeconds, latestSeconds) {
+export async function fetchHourlyCandles(
+  source,
+  earliestSeconds,
+  latestSeconds,
+) {
   const candles = [];
   let beforeSeconds = latestSeconds;
   for (;;) {
-    const page = candlesOf(await fetchCandlePage(source, beforeSeconds), source);
+    const page = candlesOf(
+      await fetchCandlePage(source, beforeSeconds),
+      source,
+    );
     candles.push(...page);
     if (page.length < CANDLES_PER_REQUEST) break;
     const oldest = Math.min(...page.map(([open]) => open));
     // Stop once a day before the earliest time is in, or when no older candle came
-    if (oldest <= earliestSeconds - MAX_CANDLE_AGE_SECONDS || oldest > beforeSeconds) break;
+    if (
+      oldest <= earliestSeconds - MAX_CANDLE_AGE_SECONDS ||
+      oldest > beforeSeconds
+    )
+      break;
     beforeSeconds = oldest - 1;
     await source.sleep(source.pageDelayMs);
   }
@@ -186,10 +205,15 @@ export async function fetchHourlyCandles(source, earliestSeconds, latestSeconds)
  * @throws {Error} When GeckoTerminal cannot give the candles
  */
 export async function priceTimes(timestamps, source) {
-  if (timestamps.length === 0) return { prices: [], earliestCandleSeconds: null };
-  const candles = await fetchHourlyCandles(source, Math.min(...timestamps), Math.max(...timestamps));
+  if (timestamps.length === 0)
+    return { prices: [], earliestCandleSeconds: null };
+  const candles = await fetchHourlyCandles(
+    source,
+    Math.min(...timestamps),
+    Math.max(...timestamps),
+  );
   return {
     prices: timestamps.map((timestamp) => priceAt(candles, timestamp)),
-    earliestCandleSeconds: candles.length > 0 ? candles[0][0] : null
+    earliestCandleSeconds: candles.length > 0 ? candles[0][0] : null,
   };
 }

@@ -15,7 +15,7 @@
  * calls, and gives a json-rpc error for any other.
  */
 
-import http from 'node:http';
+import http from "node:http";
 
 /** Slots in an X1 epoch. */
 export const SLOTS_PER_EPOCH = 216000;
@@ -24,7 +24,7 @@ export const SLOTS_PER_EPOCH = 216000;
 const SECONDS_PER_SLOT = 0.366;
 
 /** The stand-in validator's identity. */
-const NODE_PUBKEY = 'StandInNode11111111111111111111111111111111';
+const NODE_PUBKEY = "StandInNode11111111111111111111111111111111";
 
 /**
  * The chain's current slot: a thousand slots into its current epoch.
@@ -44,7 +44,9 @@ function currentSlot(chain) {
  * @returns {number} Its block time, in unix seconds
  */
 function blockSeconds(chain, slot) {
-  return Math.round(chain.nowSeconds - (currentSlot(chain) - slot) * SECONDS_PER_SLOT);
+  return Math.round(
+    chain.nowSeconds - (currentSlot(chain) - slot) * SECONDS_PER_SLOT,
+  );
 }
 
 /**
@@ -69,16 +71,21 @@ export function rewardSeconds(chain, epoch) {
  */
 function inflationReward(params, chain) {
   const config = params[1];
-  const epoch = typeof config === 'number' ? config : config.epoch;
+  const epoch = typeof config === "number" ? config : config.epoch;
   if (epoch <= chain.failEpochsThrough) {
-    return { error: { code: -32004, message: `Block not available for epoch ${epoch}` } };
+    return {
+      error: {
+        code: -32004,
+        message: `Block not available for epoch ${epoch}`,
+      },
+    };
   }
   const reward = {
     epoch,
     effectiveSlot: (epoch + 1) * SLOTS_PER_EPOCH,
     amount: chain.rewardLamports,
     postBalance: 9000000000,
-    commission: 10
+    commission: 10,
   };
   return { result: [reward] };
 }
@@ -94,7 +101,7 @@ function inflationReward(params, chain) {
 function answer(method, params, chain) {
   const slot = currentSlot(chain);
   switch (method) {
-    case 'getEpochInfo':
+    case "getEpochInfo":
       return {
         result: {
           absoluteSlot: slot,
@@ -102,12 +109,12 @@ function answer(method, params, chain) {
           epoch: chain.currentEpoch,
           slotIndex: 1000,
           slotsInEpoch: SLOTS_PER_EPOCH,
-          transactionCount: 1
-        }
+          transactionCount: 1,
+        },
       };
-    case 'getBalance':
+    case "getBalance":
       return { result: { context: { slot }, value: 5000000000 } };
-    case 'getVoteAccounts':
+    case "getVoteAccounts":
       return {
         result: {
           current: [
@@ -119,18 +126,23 @@ function answer(method, params, chain) {
               epochCredits: [[Math.max(chain.currentEpoch - 100, 0), 10, 0]],
               commission: 10,
               lastVote: slot,
-              rootSlot: slot
-            }
+              rootSlot: slot,
+            },
           ],
-          delinquent: []
-        }
+          delinquent: [],
+        },
       };
-    case 'getInflationReward':
+    case "getInflationReward":
       return inflationReward(params, chain);
-    case 'getBlockTime':
+    case "getBlockTime":
       return { result: blockSeconds(chain, params[0]) };
     default:
-      return { error: { code: -32601, message: `The stand-in X1 endpoint has no ${method}` } };
+      return {
+        error: {
+          code: -32601,
+          message: `The stand-in X1 endpoint has no ${method}`,
+        },
+      };
   }
 }
 
@@ -146,22 +158,42 @@ function answer(method, params, chain) {
  * @returns {Promise<{url: string, chain: Object, close: function(): Promise<void>}>} The endpoint's url,
  *   the chain's settings, as `rewardSeconds` takes them, and a way to stop it
  */
-export function startStandInX1({ votePubkey, rewardLamports, nowSeconds, currentEpoch = 500, failEpochsThrough = -1 }) {
-  const chain = { votePubkey, rewardLamports, nowSeconds, currentEpoch, failEpochsThrough };
+export function startStandInX1({
+  votePubkey,
+  rewardLamports,
+  nowSeconds,
+  currentEpoch = 500,
+  failEpochsThrough = -1,
+}) {
+  const chain = {
+    votePubkey,
+    rewardLamports,
+    nowSeconds,
+    currentEpoch,
+    failEpochsThrough,
+  };
   const server = http.createServer((request, response) => {
-    let body = '';
-    request.on('data', (chunk) => {
+    let body = "";
+    request.on("data", (chunk) => {
       body += chunk;
     });
-    request.on('end', () => {
-      const replyTo = (call) => ({ jsonrpc: '2.0', id: call.id, ...answer(call.method, call.params ?? [], chain) });
+    request.on("end", () => {
+      const replyTo = (call) => ({
+        jsonrpc: "2.0",
+        id: call.id,
+        ...answer(call.method, call.params ?? [], chain),
+      });
       const calls = JSON.parse(body);
-      response.setHeader('content-type', 'application/json');
-      response.end(JSON.stringify(Array.isArray(calls) ? calls.map(replyTo) : replyTo(calls)));
+      response.setHeader("content-type", "application/json");
+      response.end(
+        JSON.stringify(
+          Array.isArray(calls) ? calls.map(replyTo) : replyTo(calls),
+        ),
+      );
     });
   });
   return new Promise((resolve) => {
-    server.listen(0, '127.0.0.1', () => {
+    server.listen(0, "127.0.0.1", () => {
       resolve({
         url: `http://127.0.0.1:${server.address().port}`,
         chain,
@@ -169,7 +201,7 @@ export function startStandInX1({ votePubkey, rewardLamports, nowSeconds, current
           new Promise((done) => {
             server.close(() => done());
             server.closeAllConnections();
-          })
+          }),
       });
     });
   });

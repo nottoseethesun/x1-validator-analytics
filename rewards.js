@@ -10,8 +10,8 @@
  * and it leaves out each reward that has no price.
  */
 
-import moment from 'moment';
-import { formatXnt } from './xnt-amount.js';
+import moment from "moment";
+import { formatXnt } from "./xnt-amount.js";
 
 /** Units of a written USD value in one dollar: values have four decimal places. */
 const VALUE_UNITS_PER_USD = 10000;
@@ -58,13 +58,16 @@ export function rewardRows(rewards, prices) {
     cumulativeUnits += units ?? 0;
     return {
       epoch: reward.epoch,
-      rewardDate: moment.unix(reward.timestamp).utc().format('YYYY-MM-DD HH:mm:ss'),
+      rewardDate: moment
+        .unix(reward.timestamp)
+        .utc()
+        .format("YYYY-MM-DD HH:mm:ss"),
       lamports: reward.lamports,
       xntAmount,
       priceUSD,
       valueUSD: units === null ? null : formatValue(units),
       cumulativeXNT: formatXnt(cumulativeLamports),
-      cumulativeUSD: formatValue(cumulativeUnits)
+      cumulativeUSD: formatValue(cumulativeUnits),
     };
   });
 }
