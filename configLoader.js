@@ -3,8 +3,8 @@
  * Loads configuration from config.json with fallback defaults.
  */
 
-import fs from 'fs';
-import { GECKO_TERMINAL_API_URL } from './xnt-price.js';
+import fs from "fs";
+import { GECKO_TERMINAL_API_URL } from "./xnt-price.js";
 
 /**
  * Loads configuration from config.json with fallback defaults.
@@ -18,23 +18,23 @@ import { GECKO_TERMINAL_API_URL } from './xnt-price.js';
  */
 export function loadConfig() {
   const defaults = {
-    rpcUrl: 'https://rpc.mainnet.x1.xyz',
-    votePubkey: 'YOUR_VOTE_ACCOUNT_PUBKEY_HERE',
-    liquidityPoolAddress: 'CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR',
+    rpcUrl: "https://rpc.mainnet.x1.xyz",
+    votePubkey: "YOUR_VOTE_ACCOUNT_PUBKEY_HERE",
+    liquidityPoolAddress: "CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR",
     geckoTerminalApiUrl: GECKO_TERMINAL_API_URL,
-    geckoTerminalNetwork: 'x1-network',
-    xntTokenAddress: 'So11111111111111111111111111111111111111112',
-    usdStablecoinAddress: 'B69chRzqzDCmdB5WYB8NRu5Yv5ZA95ABiZcdzCgGm9Tq',
-    outputFile: 'xnt_rewards_with_prices.csv',
+    geckoTerminalNetwork: "x1-network",
+    xntTokenAddress: "So11111111111111111111111111111111111111112",
+    usdStablecoinAddress: "B69chRzqzDCmdB5WYB8NRu5Yv5ZA95ABiZcdzCgGm9Tq",
+    outputFile: "xnt_rewards_with_prices.csv",
     verbose: false,
-    epochs: null
+    epochs: null,
   };
 
   try {
-    const fileContent = fs.readFileSync('./config.json', 'utf8');
+    const fileContent = fs.readFileSync("./config.json", "utf8");
     return { ...defaults, ...JSON.parse(fileContent) };
   } catch {
-    console.warn('config.json not found or invalid → using defaults');
+    console.warn("config.json not found or invalid → using defaults");
     return defaults;
   }
 }

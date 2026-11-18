@@ -18,9 +18,9 @@ export const LAMPORTS_PER_XNT = 1_000_000_000n;
  * @throws {TypeError} When the amount is not a BigInt of zero or more
  */
 export function formatXnt(lamports) {
-  if (typeof lamports !== 'bigint' || lamports < 0n) {
+  if (typeof lamports !== "bigint" || lamports < 0n) {
     throw new TypeError(`Not an amount of lamports: ${String(lamports)}`);
   }
-  const fraction = String(lamports % LAMPORTS_PER_XNT).padStart(9, '0');
+  const fraction = String(lamports % LAMPORTS_PER_XNT).padStart(9, "0");
   return `${lamports / LAMPORTS_PER_XNT}.${fraction}`;
 }

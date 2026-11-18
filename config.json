@@ -5,5 +5,6 @@
   "outputFile": "xnt_rewards_with_prices.csv",
   "verbose": false,
   "epochs": null,
-  "json": false
+  "json": false,
+  "apiKeys": []
 }

@@ -11,8 +11,8 @@
  * the test too, since the check then no longer tests the bug.
  */
 
-import { it } from 'node:test';
-import assert from 'node:assert/strict';
+import { it } from "node:test";
+import assert from "node:assert/strict";
 
 /**
  * Declares a known-bug test.
@@ -28,6 +28,8 @@ export function knownBug(name, check) {
       if (error instanceof assert.AssertionError) return;
       throw error;
     }
-    assert.fail('This known bug looks fixed: declare its test with it() instead of knownBug().');
+    assert.fail(
+      "This known bug looks fixed: declare its test with it() instead of knownBug().",
+    );
   });
 }

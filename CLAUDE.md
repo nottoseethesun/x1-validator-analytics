@@ -10,6 +10,9 @@ never change anything in LP Ranger.
 Work in this repo, never in a copy of it. Code written to check something goes
 into the tests, so that later sessions reuse it instead of writing it again.
 
+**Never show any character of an api key once it is entered**: not in a
+reply, a log line, an error message, a test's output, or a listing.
+
 ## Prices
 
 Each reward's USD price is XNT's price in USDC.X, from GeckoTerminal's hourly
@@ -19,6 +22,38 @@ one fixed price at every hour, so they are never used. GeckoTerminal's X1
 candles start on 2026-10-01; an earlier reward gets an empty price cell and a
 warning, never a stand-in price. `xnt-price.js` explains the rest.
 
+## Keys
+
+The script sends no api key today. Should it come to, the key is kept as
+crypto-price-fetchers' key store keeps keys (`crypto-price-fetchers/api-key-store`):
+the service is listed in the top `config.json` under `apiKeys`,
+`npm run api-keys` runs the manager (`manage-api-keys.js`), and
+`source ./unlock-api-keys.sh` keeps the password for a terminal. The script
+is a copy of crypto-price-fetchers', which a test holds it to; a change to it
+is made there. A key is never a setting in a file git keeps, nor a
+command-line argument. `package.json` installs crypto-price-fetchers from
+GitHub, pinned to a commit.
+
+## Docs
+
+`docs/architecture.md` says how the script works, `docs/engineering.md`
+covers the files, the gates, the tests and CI, and
+`docs/npm-project-commands.md` lists every npm command, as LP Ranger's
+`docs/` does. A change keeps them true.
+
+## Gates and CI
+
+`npm run check` is the one gate, LP Ranger's: the lint (ESLint with LP
+Ranger's rules, markdownlint, Prettier, actionlint, knip's unused files),
+the tests with at least 80% of lines covered, and the security audits (npm
+audit, the security lint in `eslint-security.config.js` with
+crypto-price-fetchers' `no-secret-logging`, secretlint). It must pass before
+a commit and a push; the husky pre-commit hook runs `npm run lint`. CI runs
+`npm run check` on Node 22 and 24 (`ci.yml`) and each audit as a job of its
+own (`security-audit.yml`). `main` is protected: those five checks must
+pass on a pull request, never squashed, and no branch is deleted. LP
+Ranger's eight steps in `docs/claude/CLAUDE-CI.md` take a change to `main`.
+
 ## Tests
 
 The tests are in `test/`, on Node's own test runner, and ask nothing outside
@@ -27,7 +62,7 @@ GeckoTerminal served locally. `test/README.md` lists them.
 
 ```bash
 npm ci
-npm test
+npm run check
 ```
 
 The live chain gives a block time for every one of the validator's rewards, so

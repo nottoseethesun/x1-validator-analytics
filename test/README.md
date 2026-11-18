@@ -7,12 +7,15 @@ of its own that is removed afterwards, so nothing is written into the repo.
 
 ## Run
 
-Node 20 or later.
+Node 22 or later.
 
 ```bash
 npm ci
 npm test
 ```
+
+`npm run check` runs them with coverage, failing below 80% of lines
+covered, after the lint and before the security audits.
 
 One file:
 
@@ -28,6 +31,7 @@ node --test test/xnt-price.test.js
 | `xnt-price.test.js` | Picking a time's candle, asking GeckoTerminal for the candles a thousand hours at a time, its refusals and the waits after a 429, and the check of the pool's pair |
 | `xnt-amount.test.js` | Writing lamports as XNT with all nine decimal places |
 | `rewards.test.js` | The report's rows, the summary and the analytics metrics |
+| `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, the copy of crypto-price-fetchers' `unlock-api-keys.sh`, and the pin of crypto-price-fetchers |
 
 ## Helpers
 

@@ -17,11 +17,27 @@ Utilities for reading and summarizing X1 blockchain data about X1 network valida
 
 ## Prerequisites
 
-NodeJS 24.9.x - Earlier versions may work.
+NodeJS 22 or later.
 
 ## Installation
 
-`npm install`
+```bash
+npm install
+```
+
+It installs everything the script needs, crypto-price-fetchers' key store
+among it, from GitHub.
+
+### Api keys
+
+The script sends no api key today: GeckoTerminal and the X1 endpoint take
+none. Should a service that takes one be added, its key is kept in
+`api-keys.json` here, which git ignores, encrypted with a password you
+choose, as LP Ranger keeps its keys. The top `config.json` lists the
+services under `apiKeys`; `npm run api-keys` lists their keys, never
+showing their characters, and saves each one asked for; and
+`source ./unlock-api-keys.sh` keeps the password for a terminal. A key is
+never a setting in a file, nor a command-line argument.
 
 ### Usage
 
@@ -36,14 +52,24 @@ cells, with a warning. Amounts keep all nine of XNT's decimal places.
 
 ### Test
 
-The tests ask nothing outside your computer.
+The tests ask nothing outside your computer. The one gate that must pass
+before a commit, LP Ranger's, runs the lint, the tests and the security
+audits:
 
 ```bash
 npm ci
-npm test
+npm run check
 ```
 
-[`test/README.md`](./test/README.md) describes them.
+[`test/README.md`](./test/README.md) describes the tests.
+
+### Documentation
+
+- [`docs/architecture.md`](docs/architecture.md): how the script works.
+- [`docs/engineering.md`](docs/engineering.md): the files, the gates, the
+  tests and CI.
+- [`docs/npm-project-commands.md`](docs/npm-project-commands.md): every npm
+  command.
 
 ## Contributing
 
@@ -55,4 +81,4 @@ To be accepted for pull request:
 - Any major new functionality must have a test runnable from the current approach
 - All code must be modular e.g. low cyclomatic complexity ~17 or so.
 
-[![Tests](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/test.yml/badge.svg)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/test.yml)
+[![CI](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/ci.yml)
