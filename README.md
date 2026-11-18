@@ -1,5 +1,9 @@
 # X1 Blockchain Validator Analytics
 
+[![Lint (JS+MD)](https://img.shields.io/github/actions/workflow/status/nottoseethesun/x1-validator-analytics/ci.yml?branch=main&label=lint)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/ci.yml)
+[![Tests (Node 22/24)](https://img.shields.io/github/actions/workflow/status/nottoseethesun/x1-validator-analytics/ci.yml?branch=main&label=tests)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/ci.yml)
+[![Security Audit](https://img.shields.io/github/actions/workflow/status/nottoseethesun/x1-validator-analytics/security-audit.yml?branch=main&label=security)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/security-audit.yml)
+
 ## Overview
 
 USE AT YOUR OWN RISK: SEE LICENSE FILE, INCLUDED.
@@ -80,5 +84,3 @@ To be accepted for pull request:
 - All tests must pass
 - Any major new functionality must have a test runnable from the current approach
 - All code must be modular e.g. low cyclomatic complexity ~17 or so.
-
-[![CI](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/ci.yml)
