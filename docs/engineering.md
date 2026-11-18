@@ -104,10 +104,7 @@ The security lint follows LP Ranger's: no warning allowed, with
 no-secrets passes the public X1 addresses the code names, listed in the
 config as `PUBLIC_ADDRESSES`, which are base58 and look random to it.
 
-The dependency audit's threshold is LP Ranger's, `high`. Advisories of
-moderate severity remain in packages @solana/web3.js 1.x depends on
-(jayson's stream-json and uuid); npm's fix for them is @solana/web3.js
-3.x, a new major version.
+The dependency audit's threshold is LP Ranger's, `high`.
 
 ---
 

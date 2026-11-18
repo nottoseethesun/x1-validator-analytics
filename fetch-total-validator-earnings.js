@@ -149,8 +149,8 @@ async function logRpcHealth(connection, verbose) {
 
   try {
     const epochInfo = await connection.getEpochInfo();
-    console.log("RPC Health - Current Epoch:", epochInfo.epoch);
-    console.log("Absolute Slot:", epochInfo.absoluteSlot);
+    console.log(`RPC Health - Current Epoch: ${epochInfo.epoch}`);
+    console.log(`Absolute Slot: ${epochInfo.absoluteSlot}`);
     console.log("Epoch Start Slot:", epochInfo.epochStartSlot || "undefined");
   } catch (e) {
     console.error("RPC health check failed:", e.message);
@@ -193,14 +193,15 @@ async function findVoteAccount(connection, votePubkey) {
 }
 
 /**
- * Fetches the current epoch number from the chain.
+ * Fetches the current epoch number from the chain. web3.js gives it as a
+ * BigInt; an epoch number is small, so it is counted as a number here.
  *
  * @param {Connection} connection - Solana connection instance.
  * @returns {Promise<number>} Current epoch number.
  */
 async function getCurrentEpoch(connection) {
   const epochInfo = await connection.getEpochInfo();
-  return epochInfo.epoch;
+  return Number(epochInfo.epoch);
 }
 
 /**
@@ -230,9 +231,15 @@ async function fetchSingleEpochReward(
     );
 
     if (verbose) {
+      // web3.js gives the amounts and slots as BigInts, which JSON writes
+      // only as strings
       console.log(
         `Raw response for epoch ${epoch}:`,
-        JSON.stringify(inflationReward, null, 2),
+        JSON.stringify(
+          inflationReward,
+          (_key, value) => (typeof value === "bigint" ? `${value}` : value),
+          2,
+        ),
       );
     }
 
@@ -241,10 +248,12 @@ async function fetchSingleEpochReward(
     if (reward?.amount > 0) {
       let rewardTimestamp;
 
-      // Try to get real block time from effectiveSlot
+      // Try to get real block time from effectiveSlot. web3.js gives a block
+      // time as a BigInt of unix seconds, or null when it has none.
       if (reward.effectiveSlot !== undefined) {
         try {
-          rewardTimestamp = await connection.getBlockTime(reward.effectiveSlot);
+          const blockTime = await connection.getBlockTime(reward.effectiveSlot);
+          rewardTimestamp = blockTime === null ? null : Number(blockTime);
           if (verbose && rewardTimestamp) {
             console.log(
               `Using real block time for epoch ${epoch}: ${rewardTimestamp}`,
@@ -438,7 +447,10 @@ async function main() {
   await getVoteBalance(connection, votePubkey);
 
   const myVoteAccount = await findVoteAccount(connection, votePubkey);
-  const activationEpoch = myVoteAccount.epochCredits?.[0]?.[0] || 0;
+  // The first epoch the account earned credits in, a BigInt from web3.js
+  const firstCreditEpoch = myVoteAccount.epochCredits?.[0]?.[0];
+  const activationEpoch =
+    firstCreditEpoch === undefined ? 0 : Number(firstCreditEpoch);
 
   const currentEpoch = await getCurrentEpoch(connection);
 

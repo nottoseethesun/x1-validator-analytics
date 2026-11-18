@@ -170,6 +170,46 @@ describe("fetch-total-validator-earnings.js, three recent epochs, all priced", (
   });
 });
 
+describe("fetch-total-validator-earnings.js, in verbose mode", () => {
+  let standIns;
+  let run;
+
+  before(async () => {
+    standIns = await startStandIns({}, (chain) => ({
+      candles: flatCandles(
+        hourOf(rewardSeconds(chain, 497)) - 48 * HOUR,
+        hourOf(rewardSeconds(chain, 499)) + HOUR,
+        0.2,
+      ),
+    }));
+    run = await runScript({
+      rpcUrl: standIns.x1.url,
+      geckoTerminalUrl: standIns.server.url,
+      args: ["--epochs", "3", "--verbose"],
+    });
+  });
+
+  after(async () => {
+    if (standIns !== undefined) await standIns.close();
+  });
+
+  it("finds every reward while it prints each epoch's raw answer", () => {
+    assert.equal(run.code, 0, run.stderr);
+    assert.deepEqual(
+      run.rows.map((row) => row.Epoch),
+      ["497", "498", "499"],
+    );
+    assert.match(run.stdout, /Raw response for epoch 499:/);
+    assert.doesNotMatch(run.stdout, /Failed to query epoch/);
+    assert.doesNotMatch(run.stderr, /Failed to query epoch/);
+  });
+
+  it("prints the chain's numbers as numbers", () => {
+    assert.match(run.stdout, /RPC Health - Current Epoch: 500\n/);
+    assert.match(run.stdout, /Absolute Slot: \d+\n/);
+  });
+});
+
 describe("fetch-total-validator-earnings.js, full history, with prices from midway", () => {
   let standIns;
   let run;

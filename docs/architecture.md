@@ -75,7 +75,10 @@ time, and what it does after a refusal or a rate limit.
 
 XNT has nine decimal places. An amount is kept as a whole number of
 lamports, a BigInt, and written with all nine places, never through a
-float, so no amount or total loses a digit. A price is written to six
+float, so no amount or total loses a digit. @solana/web3.js gives every
+number the chain answers with as a BigInt: the amounts stay BigInts, and
+the epoch numbers and block times, which are small, are counted as
+numbers. A price is written to six
 decimal places, and a value is the amount times that written price, to
 four, so each row multiplies out as shown.
 
@@ -101,5 +104,6 @@ secret.
 ## Technology Choices
 
 - **Node 22 or later**, ES modules, and Node's own test runner.
-- **@solana/web3.js** for the X1 endpoint, which speaks Solana's json-rpc.
+- **@solana/web3.js 3** for the X1 endpoint, which speaks Solana's
+  json-rpc.
 - **yargs** for the command line; **csv-stringify** for the CSV.

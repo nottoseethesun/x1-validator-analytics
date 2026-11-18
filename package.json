@@ -21,7 +21,7 @@
     "check": "npm run lint && npm run test:coverage && npm run audit:deps && npm run audit:security && npm run audit:secrets"
   },
   "dependencies": {
-    "@solana/web3.js": "^1.95.3",
+    "@solana/web3.js": "^3.2.1",
     "crypto-price-fetchers": "github:nottoseethesun/crypto-price-fetchers#9c594890a0e63b3866f19f7e313a7bb7462914f5",
     "csv-stringify": "^6.5.1",
     "moment": "^2.30.1",
