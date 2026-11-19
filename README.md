@@ -1,5 +1,7 @@
 # X1 Blockchain Validator Analytics
 
+![An android, inspired by Isaac Asimov's "Easy" robot, in a formal black tuxedo with a bow tie and metallic hands stands with glowing blue eyes, projecting a scanning beam into a continuous stream of luminous blue holographic code, text, and floating data panels in a dark high-tech interior lit by blue neon.](./assets/images/easy-the-android-analyzes-the-validator-data.jpeg "X1 Blockchain Validator Analytics")
+
 [![Lint (JS+MD)](https://img.shields.io/github/actions/workflow/status/nottoseethesun/x1-validator-analytics/ci.yml?branch=main&label=lint)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/ci.yml)
 [![Tests (Node 22/24)](https://img.shields.io/github/actions/workflow/status/nottoseethesun/x1-validator-analytics/ci.yml?branch=main&label=tests)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/ci.yml)
 [![Security Audit](https://img.shields.io/github/actions/workflow/status/nottoseethesun/x1-validator-analytics/security-audit.yml?branch=main&label=security)](https://github.com/nottoseethesun/x1-validator-analytics/actions/workflows/security-audit.yml)
