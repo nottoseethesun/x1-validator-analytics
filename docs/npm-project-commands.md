@@ -34,6 +34,9 @@ npm test -- --test-name-pattern="xnt-price"
 
 ## Running the Script
 
+The script reads a vote account's rewards and writes the reports. One
+command runs it.
+
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
 | `start` | `--vote-pubkey` (required), `--rpc-url`, `--liquidity-pool-address`, `--output`/`-o`, `--epochs`/`-n`, `--verbose`/`-v`, `--json` | Read the vote account's rewards and write the reports. The file header of `fetch-total-validator-earnings.js` describes each flag. | `npm start -- --vote-pubkey <vote account> --json` |
@@ -42,6 +45,9 @@ npm test -- --test-name-pattern="xnt-price"
 
 ## Api Keys
 
+The script sends no api key today, but the repo has the key manager ready,
+should a service that takes one be added.
+
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
 | `api-keys` | `set <service>`, `check-password`, `--help` | The key manager, crypto-price-fetchers'. Lists each key the top `config.json` names, saved or not, never showing a key's characters, and asks for each one not saved. It names none today. | `npm run api-keys` |
@@ -49,6 +55,9 @@ npm test -- --test-name-pattern="xnt-price"
 ---
 
 ## Developer Tools
+
+These commands check or fix the form of the code: `lint` runs the checks,
+and `format` and `lint:fix` make the fixes the tools can make.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
@@ -61,8 +70,8 @@ npm test -- --test-name-pattern="xnt-price"
 
 ## Test
 
-The gates. `check` runs all of them and is what must pass before a commit
-and a push.
+These commands run the gates: the tests and the audits. `check` runs all of
+them, after the lint, and must pass before a commit and a push.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
@@ -77,6 +86,8 @@ and a push.
 ---
 
 ## Commands That Are Usually Not Run Alone
+
+npm runs this command itself, after another one.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |

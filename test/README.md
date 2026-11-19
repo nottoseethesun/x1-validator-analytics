@@ -25,9 +25,11 @@ node --test test/xnt-price.test.js
 
 ## Files
 
+One test file runs the whole script; the others test one module each.
+
 | File | What it checks |
 | --- | --- |
-| `fetch-total-validator-earnings.test.js` | The real script, run in a child process: one row per reward, oldest first, amounts and the XNT running total exact to nine decimal places, each price the close of its own hour's candle in the pool's own rate, values and the USD running total, a reward before GeckoTerminal's first candle left unpriced with a warning and never valued at $1.00, the failures of epochs 0 to 15 counted as expected, the json export, a run with no prices when GeckoTerminal refuses, and a verbose run, which prints each epoch's raw answer and still finds every reward |
+| `fetch-total-validator-earnings.test.js` | The real script, run in a child process: one row per reward, oldest first, amounts and the XNT running total exact to nine decimal places, each price the close of its own hour's candle in the pool's own rate, values and the USD running total, a reward before GeckoTerminal's first candle left unpriced, with a warning, the failures of epochs 0 to 15 counted as expected, the json export, a run with no prices when GeckoTerminal refuses, and a verbose run, which prints each epoch's raw answer and still finds every reward |
 | `xnt-price.test.js` | Picking a time's candle, asking GeckoTerminal for the candles a thousand hours at a time, its refusals and the waits after a 429, and the check of the pool's pair |
 | `xnt-amount.test.js` | Writing lamports as XNT with all nine decimal places |
 | `rewards.test.js` | The report's rows, the summary and the analytics metrics |
@@ -36,9 +38,9 @@ node --test test/xnt-price.test.js
 ## Helpers
 
 - `helpers/stand-in-x1.js` serves a stand-in X1 json-rpc endpoint: a chain
-  at a time and epoch the test names, paying the same reward every epoch,
-  with early epochs that fail, as X1's do after its rollback, when the test
-  says so. `rewardSeconds` gives an epoch's reward time.
+  at a time and epoch the test names, paying the same reward every epoch.
+  When the test says so, its early epochs fail, as X1's first sixteen do,
+  since its chain was rolled back early in its life. `rewardSeconds` gives an epoch's reward time.
 - `helpers/stand-in-gecko-terminal.js` answers for a pool's hourly candles
   as GeckoTerminal does, as a fetch or served on a local port. Asked in USD,
   it gives one fixed price at every hour, as GeckoTerminal does for X1.
