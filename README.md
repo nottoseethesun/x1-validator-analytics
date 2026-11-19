@@ -8,13 +8,18 @@
 
 USE AT YOUR OWN RISK: SEE LICENSE FILE, INCLUDED.
 
-Utilities for reading and summarizing X1 blockchain data about X1 network validators.
+A script that reads what an X1 validator has earned: every inflation
+reward its vote account received, each priced in USD at its own time,
+written to a CSV file with running totals, and a summary beside it.
 
 ### Current Roster of Utilities
 
 - fetch-total-validator-earnings.js
 
 #### Sample Output
+
+The two CSV files a run writes, opened in Google Sheets: the rewards, each
+with its price and the running totals, and the summary.
 
 ![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png)
 ![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png)
@@ -43,9 +48,10 @@ showing their characters, and saves each one asked for; and
 `source ./unlock-api-keys.sh` keeps the password for a terminal. A key is
 never a setting in a file, nor a command-line argument.
 
-### Usage
+## Usage
 
-Refer to the module or file header documentation.
+The file header of `fetch-total-validator-earnings.js` says how to run the
+script, and `--help` lists its options.
 
 Each reward is priced in USD at its own time, from GeckoTerminal's hourly
 candles for the configured XDEX pool, WXNT / USDC.X. GeckoTerminal's X1
@@ -68,6 +74,8 @@ npm run check
 [`test/README.md`](./test/README.md) describes the tests.
 
 ### Documentation
+
+The `docs/` folder holds three references:
 
 - [`docs/architecture.md`](docs/architecture.md): how the script works.
 - [`docs/engineering.md`](docs/engineering.md): the files, the gates, the

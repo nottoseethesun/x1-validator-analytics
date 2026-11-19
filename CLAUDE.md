@@ -28,9 +28,9 @@ The script sends no api key today. Should it come to, the key is kept as
 crypto-price-fetchers' key store keeps keys (`crypto-price-fetchers/api-key-store`):
 the service is listed in the top `config.json` under `apiKeys`,
 `npm run api-keys` runs the manager (`manage-api-keys.js`), and
-`source ./unlock-api-keys.sh` keeps the password for a terminal. The script
-is a copy of crypto-price-fetchers', which a test holds it to; a change to it
-is made there. A key is never a setting in a file git keeps, nor a
+`source ./unlock-api-keys.sh` keeps the password for a terminal.
+`unlock-api-keys.sh` is a copy of crypto-price-fetchers', which a test holds
+it to; a change to it is made there. A key is never a setting in a file git keeps, nor a
 command-line argument. `package.json` installs crypto-price-fetchers from
 GitHub, pinned to a commit.
 
@@ -40,6 +40,11 @@ GitHub, pinned to a commit.
 covers the files, the gates, the tests and CI, and
 `docs/npm-project-commands.md` lists every npm command, as LP Ranger's
 `docs/` does. A change keeps them true.
+
+Every doc passes the owner's documentation audit: it tells no story of an
+old bug, leads every topic and sub-topic with the context it needs,
+explains with facts rather than adjectives, and leaves out no step in the
+logic of an explanation.
 
 ## Gates and CI
 
@@ -65,9 +70,11 @@ npm ci
 npm run check
 ```
 
-The live chain gives a block time for every one of the validator's rewards, so
-the script's date estimate, which assumes 24-hour epochs where X1's run about
-22 hours, never runs. That was checked over the full history on 2026-11-10.
+When the chain gives no block time for a reward's slot, the script falls
+back to an estimate of the reward's date, which assumes 24-hour epochs
+where X1's run about 22 hours. The live chain gives a block time for every
+one of the validator's rewards, so the estimate never runs. That was
+checked over the full history on 2026-11-10.
 
 ## Known bugs
 

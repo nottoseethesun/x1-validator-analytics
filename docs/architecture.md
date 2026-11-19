@@ -27,6 +27,8 @@ Two companion references sit alongside this one:
 
 ## The Modules
 
+A run goes through these modules, from the settings to the reports.
+
 | Module | What it does |
 | ------ | ------------ |
 | `fetch-total-validator-earnings.js` | The command line: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. |
@@ -48,8 +50,8 @@ Two companion references sit alongside this one:
    endpoint for the account's inflation reward in each epoch, from the last
    completed one back to epoch 0, or as many as asked. A reward's time is
    the block time of its slot. An epoch the endpoint cannot answer is
-   skipped and counted; X1's epochs 0 to 15 fail as expected, after its
-   rollback.
+   skipped and counted. X1's chain was rolled back early in its life, so
+   its endpoint cannot answer for epochs 0 to 15: those fail as expected.
 3. It prices each reward at its own time (see [Prices](#prices)).
 4. It writes one row per reward, oldest first, with the running totals of
    XNT and USD, the analytics summary beside it, and, with `--json`, both as
@@ -73,9 +75,10 @@ time, and what it does after a refusal or a rate limit.
 
 ## Amounts
 
-XNT has nine decimal places. An amount is kept as a whole number of
-lamports, a BigInt, and written with all nine places, never through a
-float, so no amount or total loses a digit. @solana/web3.js gives every
+XNT has nine decimal places. A float holds about 16 significant digits,
+fewer than a large amount with nine decimal places needs. So an amount is
+kept as a whole number of lamports, a BigInt, and written with all nine
+places, never through a float, and no amount or total loses a digit. @solana/web3.js gives every
 number the chain answers with as a BigInt: the amounts stay BigInts, and
 the epoch numbers and block times, which are small, are counted as
 numbers. A price is written to six
