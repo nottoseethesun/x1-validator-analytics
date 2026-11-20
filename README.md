@@ -36,8 +36,35 @@ NodeJS 22 or later.
 npm install
 ```
 
-It installs everything the script needs, crypto-price-fetchers' key store
-among it, from GitHub.
+It installs everything the script needs, crypto-price-fetchers among it,
+from GitHub: its key store, and its GeckoTerminal client, which prices
+XNT.
+
+### Choosing Versions of Dependencies that are Raw Github Projects
+
+This step is entirely optional: `npm install` already installs everything
+the script needs.
+
+crypto-price-fetchers is installed straight from its GitHub project,
+rather than from the npm registry. `package.json` names it with a ref:
+`#main`, its main branch, which this repo follows, or `#semver:*`, its
+latest release, its highest version tag. `package-lock.json` keeps the
+commit the ref named when the lockfile was made, and `npm ci` installs
+that commit.
+
+To move to the newest commit of main, or to switch to the latest release:
+
+```bash
+npm run github-project-deps -- main
+npm run github-project-deps -- release
+```
+
+Each sets the ref, then makes `package-lock.json` again from a fresh
+`node_modules`, so the newest commit of main, or the newest release, is
+installed. If the install fails, as it does for a release whose top folder
+has no package.json, `package.json` and `package-lock.json` go back as they
+were, and `node_modules` is installed again from them.
+`npm run github-project-deps -- --help` says more.
 
 ### Api keys
 
@@ -57,8 +84,9 @@ script, and `--help` lists its options.
 
 Each reward is priced in USD at its own time, from GeckoTerminal's hourly
 candles for the configured XDEX pool, WXNT / USDC.X. GeckoTerminal's X1
-candles start on 2026-10-01, so an earlier reward has empty price and value
-cells, with a warning. Amounts keep all nine of XNT's decimal places.
+candles start on 2026-10-01, and its public api serves the last 180 days,
+so a reward before either has empty price and value cells, with a warning.
+Amounts keep all nine of XNT's decimal places.
 
 ## Development
 

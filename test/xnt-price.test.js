@@ -1,17 +1,22 @@
 /**
  * Tests of xnt-price.js: XNT's USD price at a time, from GeckoTerminal's
- * hourly candles, asked of a stand-in GeckoTerminal through a stand-in
- * fetch, so they ask nothing outside the computer.
+ * hourly candles, asked through crypto-price-fetchers' GeckoTerminal
+ * client of a stand-in GeckoTerminal, through a stand-in fetch, so they
+ * ask nothing outside the computer.
  * @module test/xnt-price.test
+ *
+ * Each source has a clock and a record of requests of its own, so the
+ * public api's 180 days are counted from a fixed time and no test's
+ * requests count against another's budget.
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import { RETRY_DELAYS_MS } from "crypto-price-fetchers/dex-prices/web-request";
 import {
   MAX_CANDLE_AGE_SECONDS,
   fetchHourlyCandles,
   geckoTerminalSource,
-  priceAt,
   priceTimes,
 } from "../xnt-price.js";
 import {
@@ -27,6 +32,9 @@ const HOUR = 3600;
 /** The first candle's open time: 04:00 UTC on 2026-10-01. */
 const T0 = Date.UTC(2026, 9, 1, 4, 0, 0) / 1000;
 
+/** The time the tests' clock gives: a hundred days after T0, in milliseconds. */
+const NOW_MS = (T0 + 100 * 24 * HOUR) * 1000;
+
 /**
  * Hourly candles from T0, each with a price of its own.
  *
@@ -41,8 +49,26 @@ function candlesFrom(count) {
 }
 
 /**
- * A source that asks a stand-in GeckoTerminal, and records each wait
- * instead of waiting.
+ * The candles as the client gives them, from the stand-in's: [open time,
+ * open, high, low, close, volume], each price the candle's own.
+ *
+ * @param {Array<Array<number>>} candles - Candles, as [open time, price]
+ * @returns {Array<Array<number>>} The client's candles
+ */
+function asGiven(candles) {
+  return candles.map(([open, price]) => [
+    open,
+    price,
+    price,
+    price,
+    price,
+    100,
+  ]);
+}
+
+/**
+ * A source that asks a stand-in GeckoTerminal, with its own clock and
+ * record of requests, and records each wait instead of waiting.
  *
  * @param {Object} gecko - The stand-in GeckoTerminal
  * @param {Object} [overrides] - Settings in place of the test's own
@@ -61,47 +87,15 @@ function sourceFor(gecko, overrides = {}) {
       waits.push(ms);
     },
     retryDelaysMs: [11, 22],
-    pageDelayMs: 7,
+    now: () => NOW_MS,
+    requestLog: [],
     ...overrides,
   });
   return { source, waits };
 }
 
-describe("priceAt", () => {
-  const candles = [
-    [T0, 0.25],
-    [T0 + HOUR, 0.26],
-    [T0 + 3 * HOUR, 0.28],
-  ];
-
-  it("gives the close of the candle that holds the time", () => {
-    assert.equal(priceAt(candles, T0), 0.25);
-    assert.equal(priceAt(candles, T0 + HOUR + 1800), 0.26);
-  });
-
-  it("gives the close of the last earlier candle for an hour that has none", () => {
-    assert.equal(priceAt(candles, T0 + 2 * HOUR + 600), 0.26);
-  });
-
-  it("gives no price before the first candle", () => {
-    assert.equal(priceAt(candles, T0 - 1), null);
-    assert.equal(priceAt([], T0), null);
-  });
-
-  it("gives no price once the last earlier candle opened a day or more before", () => {
-    assert.equal(
-      priceAt(candles, T0 + 3 * HOUR + MAX_CANDLE_AGE_SECONDS - 1),
-      0.28,
-    );
-    assert.equal(
-      priceAt(candles, T0 + 3 * HOUR + MAX_CANDLE_AGE_SECONDS),
-      null,
-    );
-  });
-});
-
 describe("fetchHourlyCandles", () => {
-  it("asks for hourly candles in the pool's own rate, back from the latest time", async () => {
+  it("asks for hourly candles of XNT in the pool's own rate, from the latest time back", async () => {
     const gecko = standInGeckoTerminal({ candles: candlesFrom(48) });
     const latest = T0 + 47 * HOUR + 1800;
 
@@ -114,29 +108,12 @@ describe("fetchHourlyCandles", () => {
     );
     assert.equal(url.searchParams.get("currency"), "token");
     assert.equal(url.searchParams.get("token"), XNT);
-    assert.equal(url.searchParams.get("before_timestamp"), String(latest));
     assert.equal(url.searchParams.get("limit"), "1000");
     assert.equal(url.searchParams.get("aggregate"), "1");
+    assert.ok(Number(url.searchParams.get("before_timestamp")) > latest);
   });
 
-  it("pages back a thousand hours at a time to the first candle, pausing between requests", async () => {
-    const all = candlesFrom(2500);
-    const gecko = standInGeckoTerminal({ candles: all });
-    const { source, waits } = sourceFor(gecko);
-
-    const candles = await fetchHourlyCandles(source, T0, T0 + 2499 * HOUR);
-
-    assert.deepEqual(candles, all);
-    assert.deepEqual(
-      gecko.asked.map((url) =>
-        Number(new URL(url).searchParams.get("before_timestamp")),
-      ),
-      [T0 + 2499 * HOUR, T0 + 1500 * HOUR - 1, T0 + 500 * HOUR - 1],
-    );
-    assert.deepEqual(waits, [7, 7]);
-  });
-
-  it("stops once it has the candles from a day before the earliest time", async () => {
+  it("gives the candles from a day before the earliest time to the latest, oldest first", async () => {
     const gecko = standInGeckoTerminal({ candles: candlesFrom(2500) });
 
     const candles = await fetchHourlyCandles(
@@ -146,15 +123,12 @@ describe("fetchHourlyCandles", () => {
     );
 
     assert.equal(gecko.asked.length, 1);
-    assert.equal(candles.length, 1000);
-    assert.equal(candles[0][0], T0 + 1500 * HOUR);
+    assert.deepEqual(candles, asGiven(candlesFrom(2500).slice(1976)));
   });
 
-  it("stops, keeping each candle once, when an answer brings no older candle", async () => {
-    const gecko = standInGeckoTerminal({
-      candles: candlesFrom(2500),
-      ignoresBefore: true,
-    });
+  it("pages back a thousand hours at a time to the pool's first candle", async () => {
+    const all = candlesFrom(2500);
+    const gecko = standInGeckoTerminal({ candles: all });
 
     const candles = await fetchHourlyCandles(
       sourceFor(gecko).source,
@@ -162,8 +136,8 @@ describe("fetchHourlyCandles", () => {
       T0 + 2499 * HOUR,
     );
 
-    assert.equal(gecko.asked.length, 2);
-    assert.deepEqual(candles, candlesFrom(2500).slice(1500));
+    assert.deepEqual(candles, asGiven(all));
+    assert.equal(gecko.asked.length, 3);
   });
 
   it("gives no candles for times before the first", async () => {
@@ -178,7 +152,7 @@ describe("fetchHourlyCandles", () => {
     );
   });
 
-  it("tries again after each refusal as too many, waiting as told", async () => {
+  it("sends a request again after each refusal as too many, waiting as told", async () => {
     const gecko = standInGeckoTerminal({
       candles: candlesFrom(10),
       refusals: [429, 429],
@@ -199,12 +173,12 @@ describe("fetchHourlyCandles", () => {
     });
     await assert.rejects(
       fetchHourlyCandles(sourceFor(gecko).source, T0, T0 + 9 * HOUR),
-      /GeckoTerminal answered 429 for pool/,
+      /GeckoTerminal answered 429 for/,
     );
     assert.equal(gecko.asked.length, 3);
   });
 
-  it("does not try again after another error", async () => {
+  it("does not send a request again after another error", async () => {
     const gecko = standInGeckoTerminal({
       candles: candlesFrom(10),
       refusals: [500],
@@ -212,7 +186,7 @@ describe("fetchHourlyCandles", () => {
     const { source, waits } = sourceFor(gecko);
     await assert.rejects(
       fetchHourlyCandles(source, T0, T0 + 9 * HOUR),
-      /GeckoTerminal answered 500 for pool/,
+      /GeckoTerminal answered 500 for/,
     );
     assert.deepEqual(waits, []);
   });
@@ -235,7 +209,7 @@ describe("fetchHourlyCandles", () => {
     });
     assert.deepEqual(
       await fetchHourlyCandles(sourceFor(gecko).source, T0, T0 + 2 * HOUR),
-      candlesFrom(3),
+      asGiven(candlesFrom(3)),
     );
   });
 });
@@ -255,6 +229,42 @@ describe("priceTimes", () => {
     });
   });
 
+  it("gives the close of the last earlier candle for an hour that has none", async () => {
+    const gecko = standInGeckoTerminal({
+      candles: [
+        [T0, 0.25],
+        [T0 + HOUR, 0.26],
+        [T0 + 3 * HOUR, 0.28],
+      ],
+    });
+
+    const found = await priceTimes(
+      [T0 + HOUR + 1800, T0 + 2 * HOUR + 600],
+      sourceFor(gecko).source,
+    );
+
+    assert.deepEqual(found.prices, [0.26, 0.26]);
+  });
+
+  it("gives no price once the last earlier candle opened a day or more before", async () => {
+    const gecko = standInGeckoTerminal({
+      candles: [
+        [T0, 0.25],
+        [T0 + 3 * HOUR, 0.28],
+      ],
+    });
+
+    const found = await priceTimes(
+      [
+        T0 + 3 * HOUR + MAX_CANDLE_AGE_SECONDS - 1,
+        T0 + 3 * HOUR + MAX_CANDLE_AGE_SECONDS,
+      ],
+      sourceFor(gecko).source,
+    );
+
+    assert.deepEqual(found.prices, [0.28, null]);
+  });
+
   it("asks nothing when there are no times", async () => {
     const gecko = standInGeckoTerminal({ candles: candlesFrom(3) });
     assert.deepEqual(await priceTimes([], sourceFor(gecko).source), {
@@ -266,7 +276,7 @@ describe("priceTimes", () => {
 });
 
 describe("geckoTerminalSource", () => {
-  it("fills in a fetch, real waits, a pause between requests and four more tries after a 429", async () => {
+  it("keeps the pool and its tokens, and fills in the client's fetch, real waits and waits after a 429", async () => {
     const source = geckoTerminalSource({
       apiUrl: "https://gecko.stand-in.test",
       network: "x1-network",
@@ -274,11 +284,14 @@ describe("geckoTerminalSource", () => {
       xntToken: XNT,
       usdToken: USDC_X,
     });
-    assert.equal(typeof source.fetch, "function");
-    assert.equal(source.retryDelaysMs.length, 4);
-    assert.ok(source.pageDelayMs > 0);
+    assert.equal(source.pool, POOL);
+    assert.equal(source.xntToken, XNT);
+    assert.equal(source.usdToken, USDC_X);
+    assert.equal(source.settings.apiUrl, "https://gecko.stand-in.test");
+    assert.equal(typeof source.settings.fetch, "function");
+    assert.deepEqual(source.settings.retryDelaysMs, RETRY_DELAYS_MS);
     const started = Date.now();
-    await source.sleep(20);
+    await source.settings.sleep(20);
     assert.ok(Date.now() - started >= 15);
   });
 });

@@ -28,8 +28,9 @@
  * - Each reward's price is XNT's in the USD stablecoin of the pool at liquidityPoolAddress, from
  *   GeckoTerminal's hourly candles: the close of the last candle that opened at or before the
  *   reward, less than a day before it (see xnt-price.js). GeckoTerminal's X1 candles start on
- *   2026-10-01, so an earlier reward has empty price and value cells, with a warning; it never
- *   gets a stand-in price, and the USD totals leave it out.
+ *   2026-10-01, and its public api serves the last 180 days, so a reward before either has empty
+ *   price and value cells, with a warning; it never gets a stand-in price, and the USD totals
+ *   leave it out.
  * - Main CSV includes "Cumulative XNT" and "Cumulative USD" running totals.
  * - Progress bar shown in quiet mode for long runs.
  * - Generates separate analytics CSV (xnt_rewards_analytics.csv).
@@ -86,9 +87,10 @@ async function lookUpPrices(rewards, source) {
             .utc()
             .format("YYYY-MM-DD HH:mm");
     console.warn(
-      `Warning: ${unpriced} of ${rewards.length} rewards have no XNT price, since GeckoTerminal has no ` +
-        `hourly candle for pool ${source.pool} in the day before them (its earliest given: ${earliest} UTC). ` +
-        "Their price and value cells are empty, and the USD totals leave them out.",
+      `Warning: ${unpriced} of ${rewards.length} rewards have no XNT price, since GeckoTerminal gave no ` +
+        `hourly candle for pool ${source.pool} in the day before them (its earliest given: ${earliest} UTC; ` +
+        "its public api serves the last 180 days). Their price and value cells are empty, and the USD " +
+        "totals leave them out.",
     );
   }
   return found.prices;

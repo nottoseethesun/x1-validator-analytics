@@ -36,7 +36,10 @@ npm run check
 ```
 
 `npm ci` installs crypto-price-fetchers too, from GitHub, at the commit
-`package.json` pins: no other step installs it.
+`package-lock.json` keeps for its main branch: no other step installs it.
+`npm run github-project-deps -- main` moves it to main's newest commit, and
+`-- release` to its latest release (see
+[crypto-price-fetchers](architecture.md#crypto-price-fetchers)).
 
 ---
 

@@ -139,9 +139,10 @@ describe("fetch-total-validator-earnings.js, three recent epochs, all priced", (
     );
     assert.ok(standIns.gecko.asked.length > 0);
     assert.ok(
-      standIns.gecko.asked.every((url) =>
-        url.includes(`&currency=token&token=${XNT}`),
-      ),
+      standIns.gecko.asked.every((url) => {
+        const query = new URL(url).searchParams;
+        return query.get("currency") === "token" && query.get("token") === XNT;
+      }),
     );
   });
 

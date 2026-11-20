@@ -30,10 +30,11 @@ One test file runs the whole script; the others test one module each.
 | File | What it checks |
 | --- | --- |
 | `fetch-total-validator-earnings.test.js` | The real script, run in a child process: one row per reward, oldest first, amounts and the XNT running total exact to nine decimal places, each price the close of its own hour's candle in the pool's own rate, values and the USD running total, a reward before GeckoTerminal's first candle left unpriced, with a warning, the failures of epochs 0 to 15 counted as expected, the json export, a run with no prices when GeckoTerminal refuses, and a verbose run, which prints each epoch's raw answer and still finds every reward |
-| `xnt-price.test.js` | Picking a time's candle, asking GeckoTerminal for the candles a thousand hours at a time, its refusals and the waits after a 429, and the check of the pool's pair |
+| `xnt-price.test.js` | The candles asked of crypto-price-fetchers' GeckoTerminal client, in the pool's own rate of XNT, from a day before the earliest time, a thousand hours at a time, its refusals and the waits after a 429, the check of the pool's pair, and each time's price from the close of its candle |
 | `xnt-amount.test.js` | Writing lamports as XNT with all nine decimal places |
 | `rewards.test.js` | The report's rows, the summary and the analytics metrics |
-| `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, the copy of crypto-price-fetchers' `unlock-api-keys.sh`, and the pin of crypto-price-fetchers |
+| `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, and the copy of crypto-price-fetchers' `unlock-api-keys.sh` |
+| `dependencies.test.js` | crypto-price-fetchers installed from GitHub, following its main branch or its latest release, and `npm run github-project-deps` running its versions tool |
 
 ## Helpers
 
