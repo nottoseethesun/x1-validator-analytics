@@ -19,8 +19,12 @@ Each reward's USD price is XNT's price in USDC.X, from GeckoTerminal's hourly
 candles for the configured pool, asked in the pool's own rate
 (`currency=token`). GeckoTerminal's USD candles for XNT (`currency=usd`) show
 one fixed price at every hour, so they are never used. GeckoTerminal's X1
-candles start on 2026-10-01; an earlier reward gets an empty price cell and a
-warning, never a stand-in price. `xnt-price.js` explains the rest.
+candles start on 2026-10-01, and its public api serves the last 180 days; a
+reward before either gets an empty price cell and a warning, never a
+stand-in price. crypto-price-fetchers' GeckoTerminal client
+(`crypto-price-fetchers/dex-prices/geckoterminal`) asks for the candles and
+finds each price, within its budget of requests and with its waits after a
+429; this repo keeps no client of its own. `xnt-price.js` explains the rest.
 
 ## Keys
 
@@ -31,8 +35,16 @@ the service is listed in the top `config.json` under `apiKeys`,
 `source ./unlock-api-keys.sh` keeps the password for a terminal.
 `unlock-api-keys.sh` is a copy of crypto-price-fetchers', which a test holds
 it to; a change to it is made there. A key is never a setting in a file git keeps, nor a
-command-line argument. `package.json` installs crypto-price-fetchers from
-GitHub, pinned to a commit.
+command-line argument.
+
+## crypto-price-fetchers
+
+`package.json` installs crypto-price-fetchers from GitHub, following its
+main branch (`#main`); `package-lock.json` keeps the commit installed.
+`npm run github-project-deps -- main|release` runs crypto-price-fetchers'
+versions tool, which sets the ref to `#main` or `#semver:*` (the latest
+release) and makes the lockfile again; the tool lives there, and this repo
+keeps no copy. `test/dependencies.test.js` holds both to that.
 
 ## Docs
 

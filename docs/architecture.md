@@ -21,6 +21,7 @@ Two companion references sit alongside this one:
 - [Prices](#prices)
 - [Amounts](#amounts)
 - [Api Keys](#api-keys)
+- [crypto-price-fetchers](#crypto-price-fetchers)
 - [Technology Choices](#technology-choices)
 
 ---
@@ -33,7 +34,7 @@ A run goes through these modules, from the settings to the reports.
 | ------ | ------------ |
 | `fetch-total-validator-earnings.js` | The command line: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. |
 | `configLoader.js` | The settings: `config.json`, over the defaults. |
-| `xnt-price.js` | XNT's USD price at a time, from GeckoTerminal. |
+| `xnt-price.js` | XNT's USD price at a time, from GeckoTerminal, through crypto-price-fetchers' GeckoTerminal client. |
 | `xnt-amount.js` | Amounts of XNT, exact to the lamport. |
 | `rewards.js` | The report's rows, with their running totals. |
 | `summary.js` | The run's summary, for the console, the analytics CSV and the analytics JSON. |
@@ -66,10 +67,17 @@ last hourly candle that opened at or before it, less than a day before it,
 from GeckoTerminal's candles for the configured pool, XDEX's WXNT /
 USDC.X. The candles are asked in the pool's own rate (`currency=token`),
 since GeckoTerminal's USD candles for XNT show one fixed price at every
-hour. GeckoTerminal's X1 candles start on 2026-10-01: an earlier reward
-gets an empty price cell and a warning, never a stand-in price.
-`xnt-price.js` explains how the candles are asked, a thousand hours at a
-time, and what it does after a refusal or a rate limit.
+hour. GeckoTerminal's X1 candles start on 2026-10-01, and its public api
+serves the last 180 days: a reward before either gets an empty price cell
+and a warning, never a stand-in price.
+
+crypto-price-fetchers' GeckoTerminal client
+(`crypto-price-fetchers/dex-prices/geckoterminal`) asks for the candles, a
+thousand hours a request, within its budget of requests, sends a request
+refused as too many again after its waits, and finds each reward's candle.
+`xnt-price.js` asks it for the pool's candles from a day before the
+earliest reward to the latest, and checks that the pool pairs XNT with
+the stablecoin.
 
 ---
 
@@ -97,10 +105,20 @@ manager, and `unlock-api-keys.sh`, a copy of crypto-price-fetchers', keeps
 the password for a terminal. A key would be kept in `api-keys.json`, which
 git ignores, encrypted with the owner's password.
 
+---
+
+## crypto-price-fetchers
+
 This repo installs [crypto-price-fetchers](https://github.com/nottoseethesun/crypto-price-fetchers)
-from GitHub, pinned to a commit, as a dependency `npm install` installs,
-for the key store and for the security lint's rule against printing a
-secret.
+from GitHub, as a dependency `npm install` installs, for the GeckoTerminal
+client, the key store and the security lint's rule against printing a
+secret. `package.json` names its main branch (`#main`), and
+`package-lock.json` keeps the commit installed, which `npm ci` installs.
+`npm run github-project-deps -- main` moves to main's newest commit, and
+`-- release` to its latest release (`#semver:*`), its highest version tag:
+crypto-price-fetchers' versions tool sets the ref, then makes the lockfile
+again from a fresh `node_modules`, and puts both files back if the install
+fails.
 
 ---
 

@@ -4,7 +4,7 @@
  */
 
 import fs from "fs";
-import { GECKO_TERMINAL_API_URL } from "./xnt-price.js";
+import { GECKO_TERMINAL_API_URL } from "crypto-price-fetchers/dex-prices/geckoterminal";
 
 /**
  * Loads configuration from config.json with fallback defaults.

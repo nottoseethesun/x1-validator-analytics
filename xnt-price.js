@@ -19,187 +19,122 @@
  *   stablecoin, USDC.X on the default pool, is taken at $1.
  * - The answer's pair is checked: the pool must pair XNT with the
  *   stablecoin, in either order.
- * - The candles are asked newest first, a thousand hours at a time, back
- *   from the latest time to a day before the earliest, or to the pool's
- *   first candle, with a pause between requests. A request GeckoTerminal
- *   refuses as too many (429) is tried again after a wait.
+ * - crypto-price-fetchers' GeckoTerminal client asks for the candles and
+ *   finds each time's price (`crypto-price-fetchers/dex-prices/geckoterminal`).
+ *   It asks a thousand hours at a time, newest first, back from the latest
+ *   time to a day before the earliest, or to the pool's first candle, as
+ *   far back as GeckoTerminal's public api serves: the last 180 days. It
+ *   keeps within its budget of requests, and sends a request GeckoTerminal
+ *   refuses as too many (429) again after its waits.
  */
 
-/** GeckoTerminal's public api, which needs no key. */
-export const GECKO_TERMINAL_API_URL = "https://api.geckoterminal.com/api/v2";
+import {
+  fetchCandles,
+  geckoTerminalSettings,
+  priceAt,
+} from "crypto-price-fetchers/dex-prices/geckoterminal";
 
 /** How long before a time its candle may open and still give its price, in seconds: a day. */
 export const MAX_CANDLE_AGE_SECONDS = 24 * 60 * 60;
 
-/** The most candles GeckoTerminal gives in one answer. */
-const CANDLES_PER_REQUEST = 1000;
-
-/** The waits before each new try of a request refused as too many, in milliseconds. */
-const RETRY_DELAYS_MS = Object.freeze([5000, 15000, 30000, 60000]);
-
-/** The pause between two requests for candles, in milliseconds. */
-const PAGE_DELAY_MS = 2000;
-
-/** How long one request may take, in milliseconds. */
-const REQUEST_TIMEOUT_MS = 30000;
+/**
+ * Where and how GeckoTerminal is asked for the pool's candles.
+ *
+ * @typedef {Object} XntPriceSource
+ * @property {string} network - GeckoTerminal's id for the chain, such as 'x1-network'
+ * @property {string} pool - The pool's address
+ * @property {string} xntToken - The address of XNT's wrapped mint
+ * @property {string} usdToken - The address of the USD stablecoin's mint
+ * @property {Object} settings - How the client asks (`geckoTerminalSettings`)
+ */
 
 /**
- * Completes where and how GeckoTerminal is asked, with Node's fetch, real
- * waits, and the waits and pause above, unless given.
+ * Completes where and how GeckoTerminal is asked: the pool and its two
+ * tokens, with the client's settings, which fill in Node's fetch, real
+ * waits, the waits after a 429, and the process's budget of requests,
+ * wherever none is given.
  *
- * @param {Object} settings - Where to ask
- * @param {string} settings.apiUrl - GeckoTerminal's api, such as `GECKO_TERMINAL_API_URL`
- * @param {string} settings.network - GeckoTerminal's id for the chain, such as 'x1-network'
- * @param {string} settings.pool - The pool's address
- * @param {string} settings.xntToken - The address of XNT's wrapped mint
- * @param {string} settings.usdToken - The address of the USD stablecoin's mint
- * @param {function(string, Object): Promise<Response>} [settings.fetch] - Fetches a url, in place of Node's fetch
- * @param {function(number): Promise<void>} [settings.sleep] - Waits a number of milliseconds
- * @param {number[]} [settings.retryDelaysMs] - The waits before each new try after a 429
- * @param {number} [settings.pageDelayMs] - The pause between two requests
- * @returns {Object} The completed settings, as `fetchHourlyCandles` takes them
+ * @param {Object} source - Where to ask
+ * @param {string} source.apiUrl - GeckoTerminal's api, such as the client's `GECKO_TERMINAL_API_URL`
+ * @param {string} source.network - GeckoTerminal's id for the chain, such as 'x1-network'
+ * @param {string} source.pool - The pool's address
+ * @param {string} source.xntToken - The address of XNT's wrapped mint
+ * @param {string} source.usdToken - The address of the USD stablecoin's mint
+ * @param {function(string, Object): Promise<Response>} [source.fetch] - Fetches a url, in place of Node's fetch
+ * @param {function(number): Promise<void>} [source.sleep] - Waits a number of milliseconds
+ * @param {number[]} [source.retryDelaysMs] - The waits before each new try after a 429
+ * @param {function(): number} [source.now] - The clock, in milliseconds, that the budget and the public api's 180 days are counted by
+ * @param {number[]} [source.requestLog] - The record of recent requests that the budget counts
+ * @returns {XntPriceSource} The completed source, as `fetchHourlyCandles` takes it
  */
-export function geckoTerminalSource(settings) {
+export function geckoTerminalSource({
+  network,
+  pool,
+  xntToken,
+  usdToken,
+  ...requests
+}) {
   return {
-    fetch: (url, options) => fetch(url, options),
-    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
-    retryDelaysMs: RETRY_DELAYS_MS,
-    pageDelayMs: PAGE_DELAY_MS,
-    ...settings,
+    network,
+    pool,
+    xntToken,
+    usdToken,
+    settings: geckoTerminalSettings(requests),
   };
 }
 
 /**
- * The price at a time: the close of the last candle that opened at or
- * before it, less than a day before it.
+ * Checks that the pool pairs XNT with the stablecoin, in either order.
  *
- * @param {Array<Array<number>>} candles - Candles as [open time in unix seconds, close], oldest first
- * @param {number} timestamp - The time, in unix seconds
- * @returns {number|null} The price, or null when no candle qualifies
+ * @param {{base: (string|null), quote: (string|null)}} pair - The pool's two tokens, as GeckoTerminal names them
+ * @param {XntPriceSource} source - Where it was asked
+ * @throws {Error} When the pool does not pair XNT with the stablecoin
  */
-export function priceAt(candles, timestamp) {
-  let low = 0;
-  let high = candles.length - 1;
-  let found = -1;
-  while (low <= high) {
-    const middle = (low + high) >> 1;
-    if (candles[middle][0] <= timestamp) {
-      found = middle;
-      low = middle + 1;
-    } else {
-      high = middle - 1;
-    }
-  }
-  if (found === -1) return null;
-  const [open, close] = candles[found];
-  return timestamp - open < MAX_CANDLE_AGE_SECONDS ? close : null;
+function checkPair({ base, quote }, source) {
+  const pair = [base, quote];
+  if (pair.includes(source.xntToken) && pair.includes(source.usdToken)) return;
+  throw new Error(
+    `Pool ${source.pool} does not pair XNT (${source.xntToken}) with the USD stablecoin (${source.usdToken})`,
+  );
 }
 
 /**
- * Asks GeckoTerminal for up to a thousand hourly candles that opened at or
- * before a time, trying again after a wait when it refuses as too many.
+ * Asks GeckoTerminal for the pool's hourly candles of XNT in the
+ * stablecoin, from a day before the earliest time to the latest time, or
+ * from the pool's first candle, once its pair is checked.
  *
- * @param {Object} source - Where and how to ask (`geckoTerminalSource`)
- * @param {number} beforeSeconds - The latest open time asked, in unix seconds
- * @returns {Promise<Object>} GeckoTerminal's answer
- * @throws {Error} When GeckoTerminal answers with an error
- */
-async function fetchCandlePage(source, beforeSeconds) {
-  const url =
-    `${source.apiUrl}/networks/${source.network}/pools/${source.pool}/ohlcv/hour` +
-    `?aggregate=1&limit=${CANDLES_PER_REQUEST}&before_timestamp=${beforeSeconds}` +
-    `&currency=token&token=${source.xntToken}`;
-  for (let attempt = 0; ; attempt++) {
-    const response = await source.fetch(url, {
-      headers: { Accept: "application/json" },
-      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-    });
-    if (response.status === 429 && attempt < source.retryDelaysMs.length) {
-      await source.sleep(source.retryDelaysMs[attempt]);
-      continue;
-    }
-    if (!response.ok) {
-      throw new Error(
-        `GeckoTerminal answered ${response.status} for pool ${source.pool}`,
-      );
-    }
-    return response.json();
-  }
-}
-
-/**
- * Reads the candles from GeckoTerminal's answer, as [open time, close],
- * once its pair is checked.
- *
- * @param {Object} answer - GeckoTerminal's answer
- * @param {Object} source - Where it was asked (`geckoTerminalSource`)
- * @returns {Array<Array<number>>} The candles, newest first
- * @throws {Error} When the answer has no candle list, or its pool does not pair XNT with the stablecoin
- */
-function candlesOf(answer, source) {
-  const list = answer?.data?.attributes?.ohlcv_list;
-  if (!Array.isArray(list))
-    throw new Error(
-      `GeckoTerminal gave no candle list for pool ${source.pool}`,
-    );
-  if (list.length === 0) return [];
-  const pair = [answer?.meta?.base?.address, answer?.meta?.quote?.address];
-  if (!pair.includes(source.xntToken) || !pair.includes(source.usdToken)) {
-    throw new Error(
-      `Pool ${source.pool} does not pair XNT (${source.xntToken}) with the USD stablecoin (${source.usdToken})`,
-    );
-  }
-  return list
-    .map((candle) => [Number(candle[0]), Number(candle[4])])
-    .filter(
-      ([open, close]) =>
-        Number.isFinite(open) && Number.isFinite(close) && close > 0,
-    );
-}
-
-/**
- * Asks GeckoTerminal for the pool's hourly candles from a day before the
- * earliest time to the latest time, or from the pool's first candle.
- *
- * @param {Object} source - Where and how to ask (`geckoTerminalSource`)
+ * @param {XntPriceSource} source - Where and how to ask (`geckoTerminalSource`)
  * @param {number} earliestSeconds - The earliest time that needs a price, in unix seconds
  * @param {number} latestSeconds - The latest time that needs a price, in unix seconds
- * @returns {Promise<Array<Array<number>>>} The candles as [open time, close], oldest first
- * @throws {Error} When GeckoTerminal cannot give them
+ * @returns {Promise<Array<number[]>>} The candles, as [open time in unix seconds, open, high, low, close, volume], oldest first
+ * @throws {Error} When GeckoTerminal cannot give them, or the pool does not pair XNT with the stablecoin
  */
 export async function fetchHourlyCandles(
   source,
   earliestSeconds,
   latestSeconds,
 ) {
-  const candles = [];
-  let beforeSeconds = latestSeconds;
-  for (;;) {
-    const page = candlesOf(
-      await fetchCandlePage(source, beforeSeconds),
-      source,
-    );
-    candles.push(...page);
-    if (page.length < CANDLES_PER_REQUEST) break;
-    const oldest = Math.min(...page.map(([open]) => open));
-    // Stop once a day before the earliest time is in, or when no older candle came
-    if (
-      oldest <= earliestSeconds - MAX_CANDLE_AGE_SECONDS ||
-      oldest > beforeSeconds
-    )
-      break;
-    beforeSeconds = oldest - 1;
-    await source.sleep(source.pageDelayMs);
-  }
-  const byOpen = new Map(candles.map((candle) => [candle[0], candle]));
-  return [...byOpen.values()].sort((a, b) => a[0] - b[0]);
+  const { candles, base, quote } = await fetchCandles(
+    {
+      network: source.network,
+      pool: source.pool,
+      timeframe: "hour",
+      currency: "token",
+      token: source.xntToken,
+    },
+    earliestSeconds - MAX_CANDLE_AGE_SECONDS,
+    latestSeconds,
+    source.settings,
+  );
+  if (candles.length > 0) checkPair({ base, quote }, source);
+  return candles;
 }
 
 /**
  * Prices each time from the pool's hourly candles.
  *
  * @param {number[]} timestamps - The times, in unix seconds
- * @param {Object} source - Where and how to ask (`geckoTerminalSource`)
+ * @param {XntPriceSource} source - Where and how to ask (`geckoTerminalSource`)
  * @returns {Promise<{prices: Array<number|null>, earliestCandleSeconds: (number|null)}>} Each time's
  *   price in USD per XNT, or null where there is none, and the open time of the earliest candle given
  * @throws {Error} When GeckoTerminal cannot give the candles
@@ -213,7 +148,9 @@ export async function priceTimes(timestamps, source) {
     Math.max(...timestamps),
   );
   return {
-    prices: timestamps.map((timestamp) => priceAt(candles, timestamp)),
+    prices: timestamps.map((timestamp) =>
+      priceAt(candles, timestamp, MAX_CANDLE_AGE_SECONDS),
+    ),
     earliestCandleSeconds: candles.length > 0 ? candles[0][0] : null,
   };
 }
