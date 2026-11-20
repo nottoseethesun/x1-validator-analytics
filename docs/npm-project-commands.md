@@ -1,6 +1,11 @@
 # x1-validator-analytics — `npm` Project Commands
 
-Every command defined in `package.json`, what it does, and what to type.
+Every npm command of x1-validator-analytics, the owner's tool that reads an
+X1 validator's rewards and prices them in USD, as its `package.json` defines
+them, run from the repo's top folder, with what each does and what to type.
+Two of them run tools of crypto-price-fetchers, the owner's repo of code his
+projects share, which this repo installs from GitHub: `api-keys` and
+`github-project-deps`.
 
 Companion to [`docs/engineering.md`](engineering.md), which covers how the
 gates work. This file covers how to drive them.
@@ -22,9 +27,11 @@ gates work. This file covers how to drive them.
 
 ## Passing Flags
 
-Run with `npm run <name>`; `start` and `test` also work without `run`.
-Flags go after a `--` separator, which tells npm the rest belongs to the
-script:
+Run with `npm run <name>`; `start` and `test` also work without `run`. Flags
+go after a `--` separator, which tells npm the rest belongs to the script,
+as in these two commands: the first reads a vote account's rewards over its
+last 20 epochs ([Running the Script](#running-the-script)), and the second
+runs the tests whose names hold `xnt-price` ([Test](#test)):
 
 ```sh
 npm start -- --vote-pubkey <vote account> --epochs 20
@@ -75,7 +82,7 @@ and `format` and `lint:fix` make the fixes the tools can make.
 | ------- | ----- | ----------- | ------- |
 | `format` | — | Prettier's write pass over every JavaScript, JSON and YAML file. | `npm run format` |
 | `knip:files` | — | The dead-code check: fails on any file nothing reaches. `lint` runs it. | `npm run knip:files` |
-| `lint` | — | The linters: ESLint, markdownlint, Prettier in check mode, actionlint, and knip's unused files. The husky pre-commit hook runs it. | `npm run lint` |
+| `lint` | — | The linters: ESLint, markdownlint, Prettier in check mode, actionlint, and knip's unused files. husky, the package that runs scripts at git's hooks, runs it before each commit. | `npm run lint` |
 | `lint:fix` | — | ESLint and markdownlint with their fixes, then `format`. | `npm run lint:fix` |
 
 ---
