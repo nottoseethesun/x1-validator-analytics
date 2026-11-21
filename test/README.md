@@ -40,6 +40,7 @@ One test file runs the whole script; the others test one module each.
 | `rewards.test.js` | The report's rows, the summary and the analytics metrics |
 | `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, which saves and lists the api keys, and the copy of crypto-price-fetchers' `unlock-api-keys.sh`, the script that keeps the password for a terminal |
 | `command-line-help.test.js` | Every command line's help, `--help` and `-h`: the script's, the key manager's and crypto-price-fetchers' versions tool's, each with its options, examples and exit codes, by crypto-price-fetchers' checks (`crypto-price-fetchers/lib/command-line-help`); and that its list holds every command line the repo runs |
+| `known-bugs.test.js` | The known bugs, each declared with `knownBug`, which passes while its bug is present: in verbose mode, the script prints no number for the current epoch's first slot |
 | `dependencies.test.js` | crypto-price-fetchers installed from GitHub, following its main branch or its latest release, and `npm run github-project-deps` running its versions tool |
 
 ## Helpers
