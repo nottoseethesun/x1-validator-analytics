@@ -1,9 +1,12 @@
 # Tests for x1-validator-analytics
 
-The tests run on Node's own test runner, from the repo's top folder. They ask
-nothing outside the computer: the script runs against a stand-in X1 endpoint
-and a stand-in GeckoTerminal, both served on this computer, in a temp folder
-of its own that is removed afterwards, so nothing is written into the repo.
+The tests run on Node's own test runner, from the repo's top folder. They
+ask nothing outside the computer: the script runs against a stand-in X1
+endpoint and a stand-in GeckoTerminal, the service it takes prices from,
+which it asks through the client of crypto-price-fetchers, the owner's repo
+of code his projects share, both stand-ins served on this computer, in a
+temp folder of its own that is removed afterwards, so nothing is written
+into the repo.
 
 ## Run
 

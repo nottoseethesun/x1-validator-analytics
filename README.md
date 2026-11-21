@@ -36,9 +36,10 @@ NodeJS 22 or later.
 npm install
 ```
 
-It installs everything the script needs, crypto-price-fetchers among it,
-from GitHub: its key store, and its GeckoTerminal client, which prices
-XNT.
+It installs everything the script needs, among it, from GitHub,
+crypto-price-fetchers, the owner's repo of code his projects share: its key
+store, and its client of GeckoTerminal, a service that lists the pools of
+decentralized exchanges with their prices, which prices XNT.
 
 ### Choosing Versions of Dependencies that are Raw Github Projects
 
@@ -52,7 +53,9 @@ latest release, its highest version tag. `package-lock.json` keeps the
 commit the ref named when the lockfile was made, and `npm ci` installs
 that commit.
 
-To move to the newest commit of main, or to switch to the latest release:
+crypto-price-fetchers also holds the tool that moves it: its versions tool,
+which this repo runs as `npm run github-project-deps`. To move to the newest
+commit of main, or to switch to the latest release:
 
 ```bash
 npm run github-project-deps -- main
@@ -71,11 +74,14 @@ were, and `node_modules` is installed again from them.
 The script sends no api key today: GeckoTerminal and the X1 endpoint take
 none. Should a service that takes one be added, its key is kept in
 `api-keys.json` here, which git ignores, encrypted with a password you
-choose, as LP Ranger keeps its keys. The top `config.json` lists the
-services under `apiKeys`; `npm run api-keys` lists their keys, never
-showing their characters, and saves each one asked for; and
-`source ./unlock-api-keys.sh` keeps the password for a terminal. A key is
-never a setting in a file, nor a command-line argument.
+choose, by crypto-price-fetchers' key store, which keeps keys as LP Ranger,
+the owner's bot that manages his 9mm V3 liquidity positions, keeps its own.
+The top `config.json` lists the services under `apiKeys`; this repo's
+`npm run api-keys` runs the store's key manager, which lists their keys,
+never showing their characters, and saves each one asked for; and
+`source ./unlock-api-keys.sh`, a script in the repo's top folder, keeps the
+password for a terminal. A key is never a setting in a file, nor a
+command-line argument.
 
 ## Usage
 
@@ -83,10 +89,11 @@ The file header of `fetch-total-validator-earnings.js` says how to run the
 script, and `--help` lists its options.
 
 Each reward is priced in USD at its own time, from GeckoTerminal's hourly
-candles for the configured XDEX pool, WXNT / USDC.X. GeckoTerminal's X1
-candles start on 2026-10-01, and its public api serves the last 180 days,
-so a reward before either has empty price and value cells, with a warning.
-Amounts keep all nine of XNT's decimal places.
+candles for the configured pool of XDEX, a decentralized exchange on X1,
+WXNT / USDC.X. GeckoTerminal's X1 candles start on 2026-10-01, and its
+public api serves the last 180 days, so a reward before either has empty
+price and value cells, with a warning. Amounts keep all nine of XNT's
+decimal places.
 
 ## Development
 
@@ -115,7 +122,9 @@ The `docs/` folder holds three references:
 
 ## Contributing
 
-Fork me on GitHub. :)  Contributions are welcome but note that any contributions are subject to the license as defined in the LICENSE file here.
+Fork me on GitHub. :) Contributions are welcome but note that any
+contributions are subject to the license as defined in the LICENSE file
+here.
 
 To be accepted for pull request:
 

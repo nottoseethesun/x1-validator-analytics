@@ -28,7 +28,11 @@ Two companion references sit alongside this one:
 
 ## The Modules
 
-A run goes through these modules, from the settings to the reports.
+A run goes through these modules, from the settings to the reports. Prices
+come from GeckoTerminal, a service that lists the pools of decentralized
+exchanges with their prices and candles, through the client of
+crypto-price-fetchers, the owner's repo of code his projects share, which
+this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 
 | Module | What it does |
 | ------ | ------------ |
@@ -62,14 +66,14 @@ A run goes through these modules, from the settings to the reports.
 
 ## Prices
 
-A reward's price is XNT's price in USDC.X at its time: the close of the
-last hourly candle that opened at or before it, less than a day before it,
-from GeckoTerminal's candles for the configured pool, XDEX's WXNT /
-USDC.X. The candles are asked in the pool's own rate (`currency=token`),
-since GeckoTerminal's USD candles for XNT show one fixed price at every
-hour. GeckoTerminal's X1 candles start on 2026-10-01, and its public api
-serves the last 180 days: a reward before either gets an empty price cell
-and a warning, never a stand-in price.
+A reward's price is XNT's price in USDC.X at its time: the close of the last
+hourly candle that opened at or before it, less than a day before it, from
+GeckoTerminal's candles for the configured pool, WXNT / USDC.X on XDEX, a
+decentralized exchange on X1. The candles are asked in the pool's own rate
+(`currency=token`), since GeckoTerminal's USD candles for XNT show one fixed
+price at every hour. GeckoTerminal's X1 candles start on 2026-10-01, and its
+public api serves the last 180 days: a reward before either gets an empty
+price cell and a warning, never a stand-in price.
 
 crypto-price-fetchers' GeckoTerminal client
 (`crypto-price-fetchers/dex-prices/geckoterminal`) asks for the candles, a
@@ -86,39 +90,43 @@ the stablecoin.
 XNT has nine decimal places. A float holds about 16 significant digits,
 fewer than a large amount with nine decimal places needs. So an amount is
 kept as a whole number of lamports, a BigInt, and written with all nine
-places, never through a float, and no amount or total loses a digit. @solana/web3.js gives every
-number the chain answers with as a BigInt: the amounts stay BigInts, and
-the epoch numbers and block times, which are small, are counted as
-numbers. A price is written to six
-decimal places, and a value is the amount times that written price, to
-four, so each row multiplies out as shown.
+places, never through a float, and no amount or total loses a digit.
+@solana/web3.js, the library the script asks the X1 endpoint through, gives
+every number the chain answers with as a BigInt: the amounts stay BigInts,
+and the epoch numbers and block times, which are small, are counted as
+numbers. A price is written to six decimal places, and a value is the amount
+times that written price, to four, so each row multiplies out as shown.
 
 ---
 
 ## Api Keys
 
 The script sends no api key: GeckoTerminal and the X1 endpoint take none.
-The repo is ready for one all the same, as its sibling projects are: the
-top `config.json` lists the services whose keys the programs send, under
-`apiKeys`, empty today; `npm run api-keys` runs crypto-price-fetchers' key
-manager, and `unlock-api-keys.sh`, a copy of crypto-price-fetchers', keeps
-the password for a terminal. A key would be kept in `api-keys.json`, which
-git ignores, encrypted with the owner's password.
+The repo is ready for one all the same, through crypto-price-fetchers' key
+store, set up as in pulsechain-analytics and pulsechain-validator-analytics,
+the owner's other projects that install it: the top `config.json` lists the
+services whose keys the programs send, under `apiKeys`, empty today; this
+repo's `npm run api-keys` runs the store's key manager, and
+`unlock-api-keys.sh`, a script in the repo's top folder and a copy of
+crypto-price-fetchers', keeps the password for a terminal. A key would be
+kept in `api-keys.json`, which git ignores, encrypted with the owner's
+password.
 
 ---
 
 ## crypto-price-fetchers
 
-This repo installs [crypto-price-fetchers](https://github.com/nottoseethesun/crypto-price-fetchers)
+This repo installs
+[crypto-price-fetchers](https://github.com/nottoseethesun/crypto-price-fetchers)
 from GitHub, as a dependency `npm install` installs, for the GeckoTerminal
 client, the key store and the security lint's rule against printing a
 secret. `package.json` names its main branch (`#main`), and
 `package-lock.json` keeps the commit installed, which `npm ci` installs.
-`npm run github-project-deps -- main` moves to main's newest commit, and
-`-- release` to its latest release (`#semver:*`), its highest version tag:
-crypto-price-fetchers' versions tool sets the ref, then makes the lockfile
-again from a fresh `node_modules`, and puts both files back if the install
-fails.
+crypto-price-fetchers' versions tool, which this repo runs as
+`npm run github-project-deps`, moves it: `-- main` to main's newest commit,
+and `-- release` to its latest release (`#semver:*`), its highest version
+tag. The tool sets the ref, then makes the lockfile again from a fresh
+`node_modules`, and puts both files back if the install fails.
 
 ---
 
