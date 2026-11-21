@@ -328,7 +328,10 @@ async function fetchSingleEpochReward(
 }
 
 /**
- * Displays a simple text progress bar in reversed colors (white background, black text) with green fill.
+ * Prints a progress bar over the terminal's current line: 30 cells, as
+ * many of them green as the share of epochs done, then the percentage and
+ * the count of epochs, in reverse video, the terminal's text and
+ * background colors swapped.
  *
  * @param {number} current - Current progress.
  * @param {number} total - Total to reach.
