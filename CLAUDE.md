@@ -84,7 +84,16 @@ exit codes. An npm target that runs one passes the flag through, as
 `npm run <target> -- --help`. Each is declared with commander, the package
 that parses command lines, so the options its help lists come from the
 declaration the program parses; the examples and exit codes go in the
-help's closing text (`addHelpText("after", …)`).
+help's closing text (`addHelpText("after", …)`). Each option's value is
+checked as commander parses it, with `InvalidArgumentError`, so a mistake
+names its option before anything is asked: a public key in base58, or an
+http or https url, by crypto-price-fetchers' `isHttpUrl`
+(`crypto-price-fetchers/lib/http-url`). Each entry point calls
+crypto-price-fetchers' `endQuietlyWhenOutputCloses`
+(`crypto-price-fetchers/lib/closed-output`) before it starts, so a command
+line whose output is piped into a program that stops reading, such as
+`head`, ends with its exit code and no stack trace; the help test checks
+it of each command line.
 `docs/npm-project-commands.md` lists every npm target, including those
 that run other tools, such as `lint` and `check`, with its flags and an
 example. LP Ranger's rules do not yet ask for the examples; this repo does.
@@ -92,7 +101,8 @@ example. LP Ranger's rules do not yet ask for the examples; this repo does.
 ## Gates and CI
 
 `npm run check` is the one gate, LP Ranger's: the lint (ESLint, which checks
-JavaScript against rules, here LP Ranger's; markdownlint, which checks the
+JavaScript against rules, here LP Ranger's and crypto-price-fetchers'
+`no-or-default`, which refuses a default made with `||`; markdownlint, which checks the
 form of Markdown files; Prettier, which formats code; actionlint, which
 checks the GitHub Actions workflow files, run from its official release by
 crypto-price-fetchers' bin `run-actionlint`, which refuses an archive whose
@@ -132,6 +142,11 @@ file's name, so `main`'s required checks stay as they are.
 The tests are in `test/`, on Node's own test runner, and ask nothing outside
 the computer: the script runs against a stand-in X1 endpoint and a stand-in
 GeckoTerminal served locally. `test/README.md` lists them.
+`test/repo-checks.test.js` holds the repo's tracked files to
+crypto-price-fetchers' checks (`crypto-price-fetchers/lib/repo-checks`):
+every EVM address in EIP-55's form, every npm target named in
+`docs/npm-project-commands.md`, and every test file and helper named in
+the docs.
 
 ```bash
 npm ci

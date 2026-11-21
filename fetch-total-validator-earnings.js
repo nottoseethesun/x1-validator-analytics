@@ -35,6 +35,8 @@
 
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Command, InvalidArgumentError } from "commander";
+import { endQuietlyWhenOutputCloses } from "crypto-price-fetchers/lib/closed-output";
+import { isHttpUrl } from "crypto-price-fetchers/lib/http-url";
 import moment from "moment";
 import { loadConfig } from "./configLoader.js";
 import { writeMainCsv, writeAnalyticsCsv } from "./csvWriter.js";
@@ -122,6 +124,53 @@ function positiveWholeNumber(value) {
 }
 
 /**
+ * A public key in base58, as X1 writes a vote account's or a pool's
+ * address: 32 bytes.
+ *
+ * @param {string} value - The text
+ * @returns {?string} The key, in base58, or null when the text is none
+ */
+function asPublicKey(value) {
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) return null;
+  try {
+    return new PublicKey(value).toBase58();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Checks that an option is a public key, as X1 writes an address.
+ *
+ * @param {string} value - The option's text
+ * @returns {string} The key, in base58
+ * @throws {InvalidArgumentError} When it is no public key
+ */
+function publicKey(value) {
+  const key = asPublicKey(value);
+  if (key === null) {
+    throw new InvalidArgumentError(
+      "It is not a public key, which is 32 bytes written in base58.",
+    );
+  }
+  return key;
+}
+
+/**
+ * Checks that an option is an http or https url.
+ *
+ * @param {string} value - The option's text
+ * @returns {string} The url
+ * @throws {InvalidArgumentError} When it is not one
+ */
+function httpUrl(value) {
+  if (!isHttpUrl(value)) {
+    throw new InvalidArgumentError("It is not an http or https url.");
+  }
+  return value;
+}
+
+/**
  * Reads the command line, declared with commander.
  *
  * @param {Object} config - The settings (`loadConfig`), which give the defaults.
@@ -135,11 +184,21 @@ function parseArguments(config, argv = process.argv) {
       "Reads every inflation reward an X1 vote account received, prices each in USD at its own time, " +
         "and writes them to a CSV file with running totals, and a summary beside it.",
     )
-    .requiredOption("--vote-pubkey <pubkey>", "the vote account's public key")
-    .option("--rpc-url <url>", "the X1 rpc endpoint to ask", config.rpcUrl)
+    .requiredOption(
+      "--vote-pubkey <pubkey>",
+      "the vote account's public key",
+      publicKey,
+    )
+    .option(
+      "--rpc-url <url>",
+      "the X1 rpc endpoint to ask",
+      httpUrl,
+      config.rpcUrl,
+    )
     .option(
       "--liquidity-pool-address <address>",
       "the pool whose hourly candles on GeckoTerminal price XNT",
+      publicKey,
       config.liquidityPoolAddress,
     )
     .option(
@@ -536,6 +595,7 @@ async function main() {
   writeJsonExport(rows, summary, { currentEpoch, activationEpoch }, argv.json);
 }
 
+endQuietlyWhenOutputCloses();
 main().catch((err) => {
   console.error("Error:", err.message);
   process.exit(1);
