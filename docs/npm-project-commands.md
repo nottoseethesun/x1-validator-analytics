@@ -1,11 +1,15 @@
 # x1-validator-analytics — `npm` Project Commands
 
-Every npm command of x1-validator-analytics, the owner's tool that reads an
-X1 validator's rewards and prices them in USD, as its `package.json` defines
-them, run from the repo's top folder, with what each does and what to type.
-Two of them run tools of crypto-price-fetchers, the owner's repo of code his
-projects share, which this repo installs from GitHub: `api-keys` and
-`github-project-deps`.
+Every command of x1-validator-analytics, the owner's tool that reads an X1
+validator's rewards and prices them in USD, that npm, the package manager of
+Node, the program that runs JavaScript outside a browser, runs from the
+repo's `package.json`, from the repo's top folder, with what each does and
+what to type. Two of them run tools of crypto-price-fetchers, the owner's
+repo of code his projects share, which this repo installs from GitHub, the
+website that hosts his code:
+`api-keys`, its key manager, which saves and lists the api keys, and
+`github-project-deps`, its versions tool, which moves crypto-price-fetchers
+to its newest main or its latest release.
 
 Companion to [`docs/engineering.md`](engineering.md), which covers how the
 gates work. This file covers how to drive them.
@@ -38,6 +42,10 @@ npm start -- --vote-pubkey <vote account> --epochs 20
 npm test -- --test-name-pattern="xnt-price"
 ```
 
+A command that runs one of the repo's command lines passes `--help` on to
+it, which then lists its options, examples of its common uses and its exit
+codes: `npm start -- --help`.
+
 ---
 
 ## Running the Script
@@ -47,13 +55,13 @@ command runs it.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
-| `start` | `--vote-pubkey` (required), `--rpc-url`, `--liquidity-pool-address`, `--output`/`-o`, `--epochs`/`-n`, `--verbose`/`-v`, `--json` | Read the vote account's rewards and write the reports. The file header of `fetch-total-validator-earnings.js` describes each flag. | `npm start -- --vote-pubkey <vote account> --json` |
+| `start` | `--vote-pubkey` (required), `--rpc-url`, `--liquidity-pool-address`, `--output`/`-o`, `--epochs`/`-n`, `--verbose`/`-v`, `--json`, `--help`/`-h` | Read the vote account's rewards and write the reports. `npm start -- --help` describes each flag, with examples and the exit codes. | `npm start -- --vote-pubkey <vote account> --json` |
 
 ---
 
 ## Api Keys
 
-The script sends no api key today, but the repo has the key manager ready,
+The script sends no api key today, but the repo has the key manager, which saves and lists the api keys, ready,
 should a service that takes one be added.
 
 | Command | Flags | Description | Example |
@@ -80,9 +88,9 @@ and `format` and `lint:fix` make the fixes the tools can make.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
-| `format` | — | Prettier's write pass over every JavaScript, JSON and YAML file. | `npm run format` |
+| `format` | — | The write pass of Prettier, the package that formats code, over every JavaScript, JSON and YAML file. | `npm run format` |
 | `knip:files` | — | The dead-code check: fails on any file nothing reaches. `lint` runs it. | `npm run knip:files` |
-| `lint` | — | The linters: ESLint, markdownlint, Prettier in check mode, actionlint, and knip's unused files. husky, the package that runs scripts at git's hooks, runs it before each commit. | `npm run lint` |
+| `lint` | — | The linters: ESLint, which checks JavaScript against rules; markdownlint, which checks the form of Markdown files; Prettier in check mode; actionlint, which checks the GitHub Actions workflow files; and knip's check for files nothing uses. husky, the package that runs scripts at the hooks of git, the version-control program, runs it before each commit. | `npm run lint` |
 | `lint:fix` | — | ESLint and markdownlint with their fixes, then `format`. | `npm run lint:fix` |
 
 ---
@@ -94,9 +102,9 @@ them, after the lint, and must pass before a commit and a push.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
-| `audit:deps` | — | `npm audit` at the `high` threshold over the packages that ship (`--omit=dev`). | `npm run audit:deps` |
-| `audit:secrets` | — | secretlint across the repo. | `npm run audit:secrets` |
-| `audit:security` | — | The security lint, `eslint-security.config.js`: eslint-plugin-security, eslint-plugin-no-secrets and `no-secret-logging`. | `npm run audit:security` |
+| `audit:deps` | — | `npm audit`, npm's check of the installed packages against known vulnerabilities, at the `high` threshold over the packages that ship (`--omit=dev`). | `npm run audit:deps` |
+| `audit:secrets` | — | secretlint, which looks for keys and credentials in files, across the repo. | `npm run audit:secrets` |
+| `audit:security` | — | The security lint, `eslint-security.config.js`: the rules of eslint-plugin-security, against code open to attack, of eslint-plugin-no-secrets, against strings that look like keys, and crypto-price-fetchers' `no-secret-logging`, against printing a name that may hold a secret. | `npm run audit:security` |
 | `check` | — | The full gate: `lint`, `test:coverage` and the three audits, in that order, stopping at the first that fails. | `npm run check` |
 | `format:check` | — | Prettier in check mode; fails rather than rewriting. | `npm run format:check` |
 | `test` | any `node --test` flag | The tests, on Node's test runner. | `npm test -- --test-name-pattern="rewards"` |
@@ -116,7 +124,9 @@ npm runs this command itself, after another one.
 
 ## See Also
 
-- [`docs/engineering.md`](engineering.md) — the gates, the tests and CI.
+- [`docs/engineering.md`](engineering.md) — the gates, the tests and CI,
+  the checks GitHub Actions runs at each push.
 - [`docs/architecture.md`](architecture.md) — how the script works.
 - [LP Ranger's `docs/claude/CLAUDE-CI.md`](https://github.com/nottoseethesun/lp-ranger/blob/main/docs/claude/CLAUDE-CI.md)
-  — the merge protocol these gates feed.
+  — the merge protocol of LP Ranger, the owner's bot that manages his 9mm V3
+  liquidity positions, which these gates feed.

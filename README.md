@@ -20,23 +20,29 @@ written to a CSV file with running totals, and a summary beside it.
 
 #### Sample Output
 
-The two CSV files a run writes, opened in Google Sheets: the rewards, each
-with its price and the running totals, and the summary.
+The two CSV files a run writes, opened in Google Sheets, Google's
+spreadsheet app: the rewards, each with its price and the running totals,
+and the summary.
 
 ![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png)
 ![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png)
 
 ## Prerequisites
 
-NodeJS 22 or later.
+Node 22 or later: the program that runs JavaScript outside a browser, on
+which the script runs.
 
 ## Installation
+
+npm, Node's package manager, installs the packages `package.json` lists
+and runs the repo's commands. From the repo's top folder:
 
 ```bash
 npm install
 ```
 
-It installs everything the script needs, among it, from GitHub,
+It installs everything the script needs, among it, from GitHub, the
+website that hosts the owner's code,
 crypto-price-fetchers, the owner's repo of code his projects share: its key
 store, and its client of GeckoTerminal, a service that lists the pools of
 decentralized exchanges with their prices, which prices XNT.
@@ -73,7 +79,8 @@ were, and `node_modules` is installed again from them.
 
 The script sends no api key today: GeckoTerminal and the X1 endpoint take
 none. Should a service that takes one be added, its key is kept in
-`api-keys.json` here, which git ignores, encrypted with a password you
+`api-keys.json` here, which git, the version-control program that keeps
+the repo's history, ignores, encrypted with a password you
 choose, by crypto-price-fetchers' key store, which keeps keys as LP Ranger,
 the owner's bot that manages his 9mm V3 liquidity positions, keeps its own.
 The top `config.json` lists the services under `apiKeys`; this repo's
@@ -85,8 +92,13 @@ command-line argument.
 
 ## Usage
 
-The file header of `fetch-total-validator-earnings.js` says how to run the
-script, and `--help` lists its options.
+`node fetch-total-validator-earnings.js --help`, or
+`npm start -- --help`, lists every option, with examples of its common
+uses and its exit codes. The run needs only the vote account's public key:
+
+```bash
+npm start -- --vote-pubkey <vote-account>
+```
 
 Each reward is priced in USD at its own time, from GeckoTerminal's hourly
 candles for the configured pool of XDEX, a decentralized exchange on X1,
@@ -116,7 +128,8 @@ The `docs/` folder holds three references:
 
 - [`docs/architecture.md`](docs/architecture.md): how the script works.
 - [`docs/engineering.md`](docs/engineering.md): the files, the gates, the
-  tests and CI.
+  tests and CI, the checks GitHub Actions, GitHub's service for running
+  them, runs at each push.
 - [`docs/npm-project-commands.md`](docs/npm-project-commands.md): every npm
   command.
 

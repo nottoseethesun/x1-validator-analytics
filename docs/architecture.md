@@ -3,14 +3,17 @@
 x1-validator-analytics reads what an X1 validator has earned: every
 inflation reward its vote account received, each priced in USD at its own
 time, written to a CSV with running totals, an analytics summary, and,
-when asked, JSON.
+when asked, JSON. It is one script that runs on Node, the program that runs
+JavaScript outside a browser.
 
 Two companion references sit alongside this one:
 
 - [`docs/engineering.md`](engineering.md): the files on disk, the gates,
-  the tests and CI.
-- [`docs/npm-project-commands.md`](npm-project-commands.md): every npm
-  command and its flags.
+  the tests and CI, the checks GitHub, the website that hosts the repo,
+  runs at each push.
+- [`docs/npm-project-commands.md`](npm-project-commands.md): every command
+  the repo's `package.json` gives npm, Node's package manager, to run, and
+  its flags.
 
 ---
 
@@ -36,7 +39,7 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 
 | Module | What it does |
 | ------ | ------------ |
-| `fetch-total-validator-earnings.js` | The command line: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. |
+| `fetch-total-validator-earnings.js` | The command line, declared with commander, the package that parses a command line and writes its help: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. `--help` lists its options, with examples and its exit codes. |
 | `configLoader.js` | The settings: `config.json`, over the defaults. |
 | `xnt-price.js` | XNT's USD price at a time, from GeckoTerminal, through crypto-price-fetchers' GeckoTerminal client. |
 | `xnt-amount.js` | Amounts of XNT, exact to the lamport. |
@@ -109,8 +112,8 @@ services whose keys the programs send, under `apiKeys`, empty today; this
 repo's `npm run api-keys` runs the store's key manager, and
 `unlock-api-keys.sh`, a script in the repo's top folder and a copy of
 crypto-price-fetchers', keeps the password for a terminal. A key would be
-kept in `api-keys.json`, which git ignores, encrypted with the owner's
-password.
+kept in `api-keys.json`, which git, the version-control program that
+keeps the repo's history, ignores, encrypted with the owner's password.
 
 ---
 
@@ -135,4 +138,8 @@ tag. The tool sets the ref, then makes the lockfile again from a fresh
 - **Node 22 or later**, ES modules, and Node's own test runner.
 - **@solana/web3.js 3** for the X1 endpoint, which speaks Solana's
   json-rpc.
-- **yargs** for the command line; **csv-stringify** for the CSV.
+- **commander** for the command line, as the rules of LP Ranger, the
+  owner's bot that manages his 9mm V3 liquidity positions, ask: the help
+  it writes lists the options from the declaration the script parses.
+- **csv-stringify**, a package that turns rows into CSV text, for the CSV
+  files.

@@ -6,19 +6,10 @@
  * cumulative columns) + separate analytics summary. Optional JSON export available.
  *
  * @usage
- * Full history (default): node fetch-total-validator-earnings.js --vote-pubkey YOUR_PUBKEY
- * Last 20 epochs: node fetch-total-validator-earnings.js --epochs 20 --vote-pubkey YOUR_PUBKEY
- * Verbose: node fetch-total-validator-earnings.js --verbose --vote-pubkey YOUR_PUBKEY
- * With JSON export: node fetch-total-validator-earnings.js --json --vote-pubkey YOUR_PUBKEY
- *
- * @commandLineOptions
- * --rpc-url              X1 RPC endpoint                       Default: from config.json
- * --vote-pubkey          Vote account public key               Required
- * --liquidity-pool-address  Pool the XNT price comes from      Default: from config.json
- * --output, -o           Main CSV file path                    Default: from config.json
- * --verbose, -v          Enable detailed verbose logging      (flag, default: false)
- * --epochs, -n           Number of epochs to process (from current-1 backwards)  (optional, default: null = unlimited/full)
- * --json                 Export full data as JSON file (xnt_rewards.json)  (flag, default: false)
+ * `node fetch-total-validator-earnings.js --help` lists every option, with
+ * examples of its common uses and its exit codes; the command line is
+ * declared with commander, the package that parses command lines, in
+ * `parseArguments` below.
  *
  * @notes
  * - Processes from current-1 back to epoch 0 by default (full history).
@@ -39,12 +30,11 @@
  * - Early epoch failures (<=15) are expected due to X1 rollback/reboot.
  * - Reward dates now use real block time from effectiveSlot + getBlockTime() when available.
  * - Settings come from config.json in the folder the script runs in (see configLoader.js).
- * - Requires Node.js ≥ 20 for stable ESM support.
+ * - Requires Node 22 or later, as the repo's package.json says.
  */
 
 import { Connection, PublicKey } from "@solana/web3.js";
-import yargs from "yargs/yargs";
-import { hideBin } from "yargs/helpers";
+import { Command, InvalidArgumentError } from "commander";
 import moment from "moment";
 import { loadConfig } from "./configLoader.js";
 import { writeMainCsv, writeAnalyticsCsv } from "./csvWriter.js";
@@ -96,37 +86,82 @@ async function lookUpPrices(rewards, source) {
   return found.prices;
 }
 
+/** What the help says after the options: where the defaults come from, examples, exit codes. */
+const HELP_AFTER = `
+The defaults of --rpc-url, --liquidity-pool-address, --output, --verbose
+and --epochs come from config.json in the folder the script runs in.
+
+Examples:
+  Every reward of a vote account, from its first epoch to the last one
+  completed, written to the CSV file config.json names:
+    $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account>
+  The last 20 epochs only, with each step logged:
+    $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
+  Every reward, with a JSON file of all of it beside the CSV files:
+    $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
+  The same first run, through npm:
+    $ npm start -- --vote-pubkey <vote-account>
+
+Exit codes:
+  0  the CSV files were written, or the account had no rewards
+  1  an option was wrong or missing, or a request to the chain failed`;
+
 /**
- * Parses command-line arguments using yargs.
+ * Checks that an option is a whole number above 0.
+ *
+ * @param {string} value - The option's text
+ * @returns {number} The number
+ * @throws {InvalidArgumentError} When it is not a whole number above 0
+ */
+function positiveWholeNumber(value) {
+  const number = Number(value);
+  if (!Number.isInteger(number) || number < 1) {
+    throw new InvalidArgumentError("It is not a whole number above 0.");
+  }
+  return number;
+}
+
+/**
+ * Reads the command line, declared with commander.
  *
  * @param {Object} config - The settings (`loadConfig`), which give the defaults.
- * @returns {Object} Parsed argv object.
+ * @param {string[]} [argv=process.argv] - The arguments, as `process.argv` holds them
+ * @returns {{votePubkey: string, rpcUrl: string, liquidityPoolAddress: string, output: string, verbose: boolean, epochs: (number|null), json: boolean}} The options
  */
-function parseArguments(config) {
-  return yargs(hideBin(process.argv))
-    .option("rpc-url", { type: "string", default: config.rpcUrl })
-    .option("vote-pubkey", { type: "string", demandOption: true })
-    .option("liquidity-pool-address", {
-      type: "string",
-      default: config.liquidityPoolAddress,
-    })
-    .option("output", {
-      alias: "o",
-      type: "string",
-      default: config.outputFile,
-    })
-    .option("verbose", { alias: "v", type: "boolean", default: config.verbose })
-    .option("epochs", {
-      alias: "n",
-      type: "number",
-      description: "Number of epochs to process (from current-1 backwards)",
-      default: config.epochs,
-    })
-    .option("json", {
-      type: "boolean",
-      description: "Export full data as JSON file (xnt_rewards.json)",
-      default: false,
-    }).argv;
+function parseArguments(config, argv = process.argv) {
+  return new Command()
+    .name("fetch-total-validator-earnings")
+    .description(
+      "Reads every inflation reward an X1 vote account received, prices each in USD at its own time, " +
+        "and writes them to a CSV file with running totals, and a summary beside it.",
+    )
+    .requiredOption("--vote-pubkey <pubkey>", "the vote account's public key")
+    .option("--rpc-url <url>", "the X1 rpc endpoint to ask", config.rpcUrl)
+    .option(
+      "--liquidity-pool-address <address>",
+      "the pool whose hourly candles on GeckoTerminal price XNT",
+      config.liquidityPoolAddress,
+    )
+    .option(
+      "-o, --output <file>",
+      "the main CSV file to write",
+      config.outputFile,
+    )
+    .option("-v, --verbose", "log each step", config.verbose)
+    .option(
+      "-n, --epochs <count>",
+      "how many epochs to read, back from the last one completed; every epoch when unset",
+      positiveWholeNumber,
+      config.epochs,
+    )
+    .option(
+      "--json",
+      "also write all of it as a JSON file, xnt_rewards.json",
+      false,
+    )
+    .addHelpText("after", HELP_AFTER)
+    .parse(argv)
+    .opts();
 }
 
 /**
@@ -442,8 +477,8 @@ async function main() {
   const config = loadConfig();
   const argv = parseArguments(config);
 
-  const connection = createConnection(argv["rpc-url"]);
-  const votePubkey = new PublicKey(argv["vote-pubkey"]);
+  const connection = createConnection(argv.rpcUrl);
+  const votePubkey = new PublicKey(argv.votePubkey);
 
   await logRpcHealth(connection, argv.verbose);
   await getVoteBalance(connection, votePubkey);
@@ -478,7 +513,7 @@ async function main() {
     geckoTerminalSource({
       apiUrl: config.geckoTerminalApiUrl,
       network: config.geckoTerminalNetwork,
-      pool: argv["liquidity-pool-address"],
+      pool: argv.liquidityPoolAddress,
       xntToken: config.xntTokenAddress,
       usdToken: config.usdStablecoinAddress,
     }),

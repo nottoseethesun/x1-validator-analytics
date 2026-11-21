@@ -1,16 +1,18 @@
 # Tests for x1-validator-analytics
 
-The tests run on Node's own test runner, from the repo's top folder. They
-ask nothing outside the computer: the script runs against a stand-in X1
-endpoint and a stand-in GeckoTerminal, the service it takes prices from,
-which it asks through the client of crypto-price-fetchers, the owner's repo
-of code his projects share, both stand-ins served on this computer, in a
-temp folder of its own that is removed afterwards, so nothing is written
-into the repo.
+The tests run on the test runner built into Node, the program that runs
+JavaScript outside a browser, from the repo's top folder. They ask nothing
+outside the computer: the script runs against a stand-in X1 endpoint and a
+stand-in GeckoTerminal, the service it takes prices from, which it asks
+through the client of crypto-price-fetchers, the owner's repo of code his
+projects share, on GitHub, the website that hosts it, both stand-ins served
+on this computer, in a temp folder of its own that is removed afterwards, so
+nothing is written into the repo.
 
 ## Run
 
-Node 22 or later.
+Node 22 or later. npm, Node's package manager, installs the packages and
+runs the tests:
 
 ```bash
 npm ci
@@ -36,7 +38,8 @@ One test file runs the whole script; the others test one module each.
 | `xnt-price.test.js` | The candles asked of crypto-price-fetchers' GeckoTerminal client, in the pool's own rate of XNT, from a day before the earliest time, a thousand hours at a time, its refusals and the waits after a 429, the check of the pool's pair, and each time's price from the close of its candle |
 | `xnt-amount.test.js` | Writing lamports as XNT with all nine decimal places |
 | `rewards.test.js` | The report's rows, the summary and the analytics metrics |
-| `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, and the copy of crypto-price-fetchers' `unlock-api-keys.sh` |
+| `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, which saves and lists the api keys, and the copy of crypto-price-fetchers' `unlock-api-keys.sh`, the script that keeps the password for a terminal |
+| `command-line-help.test.js` | Every command line's help, `--help` and `-h`: the script's, the key manager's and crypto-price-fetchers' versions tool's, each with its options, examples and exit codes, by crypto-price-fetchers' checks (`crypto-price-fetchers/lib/command-line-help`); and that its list holds every command line the repo runs |
 | `dependencies.test.js` | crypto-price-fetchers installed from GitHub, following its main branch or its latest release, and `npm run github-project-deps` running its versions tool |
 
 ## Helpers

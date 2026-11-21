@@ -8,6 +8,11 @@ Follow the coding standards of LP Ranger, the owner's bot that manages his
 or the local clone at `~/code/lp-ranger/github-repo/lp-ranger/`. Read them, and
 never change anything in LP Ranger.
 
+The repo's programs run on Node, the program that runs JavaScript outside a
+browser; npm, Node's package manager, installs their packages and runs the
+commands `package.json` names; git, the version-control program, keeps the
+repo's history, on GitHub, the website that hosts it.
+
 Work in this repo, never in a copy of it. Code written to check something goes
 into the tests, so that later sessions reuse it instead of writing it again.
 
@@ -55,7 +60,8 @@ both to that.
 ## Docs
 
 `docs/architecture.md` says how the script works, `docs/engineering.md`
-covers the files, the gates, the tests and CI, and
+covers the files, the gates, the tests and CI (the gates, run by GitHub
+Actions at each push), and
 `docs/npm-project-commands.md` lists every npm command, as LP Ranger's
 `docs/` does. A change keeps them true.
 
@@ -85,17 +91,22 @@ example. LP Ranger's rules do not yet ask for the examples; this repo does.
 
 ## Gates and CI
 
-`npm run check` is the one gate, LP Ranger's: the lint (ESLint with LP
-Ranger's rules, markdownlint, Prettier, actionlint, knip's unused files),
-the tests with at least 80% of lines covered, and the security audits (npm
-audit, the security lint in `eslint-security.config.js` with
-crypto-price-fetchers' `no-secret-logging`, secretlint). It must pass before
-a commit and a push; husky, the package that runs scripts at git's hooks,
-runs `npm run lint` before each commit. CI runs `npm run check` on Node 22
-and 24 (`ci.yml`) and each audit as a job of its own (`security-audit.yml`).
-`main` is protected: those five checks must pass on a pull request, never
-squashed, and no branch is deleted. LP Ranger's eight steps in
-`docs/claude/CLAUDE-CI.md` take a change to `main`.
+`npm run check` is the one gate, LP Ranger's: the lint (ESLint, which checks
+JavaScript against rules, here LP Ranger's; markdownlint, which checks the
+form of Markdown files; Prettier, which formats code; actionlint, which
+checks the GitHub Actions workflow files; and knip, which finds files
+nothing uses), the tests with at least 80% of lines covered, and the
+security audits (npm audit, npm's check of the installed packages against
+known vulnerabilities; the security lint in `eslint-security.config.js` with
+crypto-price-fetchers' `no-secret-logging`, a rule that refuses printing a
+name that may hold a secret; and secretlint, which looks for keys and
+credentials in files). It must pass before a commit and a push; husky, the
+package that runs scripts at git's hooks, runs `npm run lint` before each
+commit. CI runs `npm run check` on Node 22 and 24 (`ci.yml`) and each audit
+as a job of its own (`security-audit.yml`). `main` is protected: those five
+checks must pass on a pull request, never squashed, and no branch is
+deleted. LP Ranger's eight steps in `docs/claude/CLAUDE-CI.md` take a change
+to `main`.
 
 ## Tests
 
