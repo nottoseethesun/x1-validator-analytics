@@ -161,7 +161,13 @@ checked over the full history on 2026-11-10.
 
 ## Known bugs
 
-None is known. When one is found, it gets a test in
+Five are known. The json export's `activationEpochApprox` is the first of
+the last five epochs the account earned credits in, as `getVoteAccounts`
+gives them, not its first reward's. An epoch the endpoint answers with no
+reward for the account is counted as a failed query, which skews the
+counts of failures and the share of expected epochs with a reward. The
+requests to the X1 endpoint have no time limit. `config.json`'s
+`votePubkey` and `json` are never read. When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the

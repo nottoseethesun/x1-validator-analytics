@@ -59,17 +59,26 @@ function readJson(file) {
  * @param {string} run.rpcUrl - The stand-in X1 endpoint's url
  * @param {string} run.geckoTerminalUrl - The stand-in GeckoTerminal's url
  * @param {string[]} [run.args=[]] - Arguments beyond --rpc-url, --vote-pubkey and --output
- * @returns {Promise<{code: number, stdout: string, stderr: string, rows: ?Array<Object>,
- *   analytics: ?Array<Object>, json: ?Object, analyticsJson: ?Array<Object>}>} How it ended, and what it wrote
+ * @param {Object} [run.config={}] - Settings for the folder's config.json beyond the stand-in GeckoTerminal's url
+ * @param {number} [run.timeoutMs=0] - How long the run may take before it is stopped, in milliseconds; 0 for no limit
+ * @returns {Promise<{code: number, killed: boolean, stdout: string, stderr: string, rows: ?Array<Object>,
+ *   analytics: ?Array<Object>, json: ?Object, analyticsJson: ?Array<Object>}>} How it ended, whether it was
+ *   stopped for taking too long, and what it wrote
  */
-export async function runScript({ rpcUrl, geckoTerminalUrl, args = [] }) {
+export async function runScript({
+  rpcUrl,
+  geckoTerminalUrl,
+  args = [],
+  config = {},
+  timeoutMs = 0,
+}) {
   const dir = fs.mkdtempSync(
     path.join(os.tmpdir(), "x1-validator-analytics-test-"),
   );
   try {
     fs.writeFileSync(
       path.join(dir, "config.json"),
-      JSON.stringify({ geckoTerminalApiUrl: geckoTerminalUrl }),
+      JSON.stringify({ geckoTerminalApiUrl: geckoTerminalUrl, ...config }),
     );
     const output = path.join(dir, "rewards.csv");
     const argv = [
@@ -86,11 +95,16 @@ export async function runScript({ rpcUrl, geckoTerminalUrl, args = [] }) {
     try {
       ended = {
         code: 0,
-        ...(await execFileAsync(process.execPath, argv, { cwd: dir })),
+        killed: false,
+        ...(await execFileAsync(process.execPath, argv, {
+          cwd: dir,
+          timeout: timeoutMs,
+        })),
       };
     } catch (error) {
       ended = {
         code: error.code ?? 1,
+        killed: error.killed === true,
         stdout: error.stdout ?? "",
         stderr: error.stderr ?? String(error),
       };
