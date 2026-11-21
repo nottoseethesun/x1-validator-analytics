@@ -48,6 +48,6 @@
   "author": "Chris M Balz using Grok to Generate",
   "license": "Apache License, Version 2.0",
   "engines": {
-    "node": ">=22"
+    "node": ">=24"
   }
 }

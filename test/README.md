@@ -11,7 +11,7 @@ nothing is written into the repo.
 
 ## Run
 
-Node 22 or later. npm, Node's package manager, installs the packages and
+Node 24 or later. npm, Node's package manager, installs the packages and
 runs the tests:
 
 ```bash
