@@ -30,7 +30,7 @@
  * - Early epoch failures (<=15) are expected due to X1 rollback/reboot.
  * - Reward dates now use real block time from effectiveSlot + getBlockTime() when available.
  * - Settings come from config.json in the folder the script runs in (see configLoader.js).
- * - Requires Node 22 or later, as the repo's package.json says.
+ * - Requires Node 24 or later, as the repo's package.json says.
  */
 
 import { Connection, PublicKey } from "@solana/web3.js";

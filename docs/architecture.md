@@ -135,7 +135,7 @@ tag. The tool sets the ref, then makes the lockfile again from a fresh
 
 ## Technology Choices
 
-- **Node 22 or later**, ES modules, and Node's own test runner.
+- **Node 24 or later**, ES modules, and Node's own test runner.
 - **@solana/web3.js 3** for the X1 endpoint, which speaks Solana's
   json-rpc.
 - **commander** for the command line, as the rules of LP Ranger, the
