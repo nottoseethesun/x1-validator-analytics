@@ -78,14 +78,16 @@ supports.
 
 The lint checks each file's form before any test runs: the rules the code
 follows, its formatting, the workflows, and files nothing uses.
-`npm run lint` runs five tools, each an npm package:
+`npm run lint` runs five tools: four npm packages, and actionlint, a
+program its author publishes for each system, which the table's fourth
+row explains:
 
 | Tool | Configured in | What it does, and what it holds the repo to |
 | ---- | ------------- | ------------------------------------------- |
 | ESLint | `eslint.config.js` | Checks JavaScript against rules: LP Ranger's, with no warning allowed: cyclomatic complexity ≤ 17, ≤ 500 lines of code a file (blank lines and comments not counted), lines ≤ 80 characters but strings, urls and comments, `===`, no unused name, no `var`, `const` where nothing is reassigned, no `Math.random`, no comment that tells Prettier, the formatter in the row below, to skip code, and every import resolved. |
 | markdownlint | `.markdownlint-cli2.jsonc` | Checks the form of Markdown files, with LP Ranger's settings, over every Markdown file. |
 | Prettier | `.prettierrc`, `.prettierignore` | Formats code; in check mode, it fails when its formatting would change any JavaScript, JSON or YAML file. |
-| actionlint | — | Checks the GitHub Actions workflow files, in `.github/workflows/`, for mistakes in their syntax and expressions. |
+| actionlint | crypto-price-fetchers' `actionlint/release.js` | Checks the GitHub Actions workflow files, in `.github/workflows/`, for mistakes in their syntax, their expressions and the shell scripts their steps run. The lint runs the official release of actionlint, rhysd's program, through `run-actionlint`, a bin of crypto-price-fetchers: the first run downloads the archive for its system, refuses it unless its SHA-256 is the one crypto-price-fetchers pins, and keeps the program in `node_modules/.cache/actionlint/`, which later runs use. |
 | knip | `knip.json` | Finds files nothing imports or runs, and fails on any. See [Dead Code Detection](#dead-code-detection). |
 
 husky, a package that runs scripts at git's hooks, runs `npm run lint`
@@ -110,15 +112,16 @@ than written again.
 
 ## Security Audits
 
-Three audits look for security problems: in the packages the repo
+Four audits look for security problems: in the packages the repo
 installs, through npm audit, npm's check of installed packages against
-known vulnerabilities; in the code, through ESLint with security rules;
-and in the text of every file, through secretlint, which looks for keys
-and credentials.
+known vulnerabilities; in the release of actionlint the lint runs; in the
+code, through ESLint with security rules; and in the text of every file,
+through secretlint, which looks for keys and credentials.
 
 | Command | What it runs | What it catches |
 | ------- | ------------ | --------------- |
-| `npm run audit:deps` | `npm audit --audit-level=high --omit=dev` | Known vulnerabilities, of high severity or worse, in the packages that ship. |
+| `npm run audit:deps` | `npm audit --audit-level=high --omit=dev`, then `npm run audit:actionlint` | Known vulnerabilities, of high severity or worse, in the packages that ship; then what the next row says. |
+| `npm run audit:actionlint` | `run-actionlint --check`: downloads every archive of the actionlint release crypto-price-fetchers pins | An archive that cannot be downloaded, or whose SHA-256 differs from the one pinned. npm audit does not cover actionlint, which is no npm package; the lint makes the same check on the one archive it runs. |
 | `npm run audit:security` | ESLint with `eslint-security.config.js` | Code open to attack (eslint-plugin-security), strings that look like keys (eslint-plugin-no-secrets), and printing a name that may hold a secret (`no-secret-logging`, from crypto-price-fetchers). |
 | `npm run audit:secrets` | secretlint, with `.secretlintrc.json` and `.secretlintignore` | Keys and credentials in any file. |
 
@@ -149,7 +152,7 @@ request to `main`, and by hand:
 | Workflow | Job | Runs |
 | -------- | --- | ---- |
 | `ci.yml` | check-latest-nodejs-lts (Node 26), check-oldest-nodejs-supported (Node 24) | `npm run check`. |
-| `security-audit.yml` | Dependency Audit, Security Lint, Secret Scan | Each audit as a job of its own. |
+| `security-audit.yml` | Dependency Audit, Security Lint, Secret Scan | Each audit as a job of its own; Dependency Audit runs `npm run audit:deps`, so the check of actionlint's archives with it. |
 
 The two checks of `ci.yml` are named for their roles, not their Node
 versions, so moving to newer versions renames no check.

@@ -39,7 +39,7 @@ One test file runs the whole script; the others test one module each.
 | `xnt-amount.test.js` | Writing lamports as XNT with all nine decimal places |
 | `rewards.test.js` | The report's rows, the summary and the analytics metrics |
 | `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, which saves and lists the api keys, and the copy of crypto-price-fetchers' `unlock-api-keys.sh`, the script that keeps the password for a terminal |
-| `command-line-help.test.js` | Every command line's help, `--help` and `-h`: the script's, the key manager's and crypto-price-fetchers' versions tool's, each with its options, examples and exit codes, by crypto-price-fetchers' checks (`crypto-price-fetchers/lib/command-line-help`); and that its list holds every command line the repo runs |
+| `command-line-help.test.js` | Every command line's help, `--help` and `-h`: the script's, the key manager's, and those of the bins of crypto-price-fetchers the npm targets run, its versions tool and `run-actionlint`, each with its options, examples and exit codes, by crypto-price-fetchers' checks (`crypto-price-fetchers/lib/command-line-help`); and that its list holds every command line the repo runs, every bin of crypto-price-fetchers among them |
 | `dependencies.test.js` | crypto-price-fetchers installed from GitHub, following its main branch or its latest release, and `npm run github-project-deps` running its versions tool |
 
 ## Helpers
