@@ -54,6 +54,21 @@ function flatCandles(fromHour, toHour, price) {
 }
 
 /**
+ * Asks a json-rpc endpoint for its epoch, as the script does.
+ *
+ * @param {string} url - The endpoint's url
+ * @returns {Promise<{absoluteSlot: number, slotIndex: number}>} The answer to getEpochInfo
+ */
+async function epochInfo(url) {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getEpochInfo" }),
+  });
+  return (await response.json()).result;
+}
+
+/**
  * Starts the two stand-ins.
  *
  * @param {Object} chainSettings - The stand-in chain's settings, beyond the vote account, reward and time
@@ -208,6 +223,14 @@ describe("fetch-total-validator-earnings.js, in verbose mode", () => {
   it("prints the chain's numbers as numbers", () => {
     assert.match(run.stdout, /RPC Health - Current Epoch: 500\n/);
     assert.match(run.stdout, /Absolute Slot: \d+\n/);
+  });
+
+  it("prints the current epoch's first slot, its absolute slot less its index in the epoch", async () => {
+    const { absoluteSlot, slotIndex } = await epochInfo(standIns.x1.url);
+    assert.ok(
+      run.stdout.includes(`Epoch Start Slot: ${absoluteSlot - slotIndex}\n`),
+      run.stdout,
+    );
   });
 });
 

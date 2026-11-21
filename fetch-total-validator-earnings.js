@@ -188,7 +188,9 @@ async function logRpcHealth(connection, verbose) {
     const epochInfo = await connection.getEpochInfo();
     console.log(`RPC Health - Current Epoch: ${epochInfo.epoch}`);
     console.log(`Absolute Slot: ${epochInfo.absoluteSlot}`);
-    console.log("Epoch Start Slot:", epochInfo.epochStartSlot || "undefined");
+    console.log(
+      `Epoch Start Slot: ${epochInfo.absoluteSlot - epochInfo.slotIndex}`,
+    );
   } catch (e) {
     console.error("RPC health check failed:", e.message);
   }
@@ -326,7 +328,10 @@ async function fetchSingleEpochReward(
 }
 
 /**
- * Displays a simple text progress bar in reversed colors (white background, black text) with green fill.
+ * Prints a progress bar over the terminal's current line: 30 cells, as
+ * many of them green as the share of epochs done, then the percentage and
+ * the count of epochs, in reverse video, the terminal's text and
+ * background colors swapped.
  *
  * @param {number} current - Current progress.
  * @param {number} total - Total to reach.
