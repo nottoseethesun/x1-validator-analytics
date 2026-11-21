@@ -186,6 +186,28 @@ describe("fetch-total-validator-earnings.js, three recent epochs, all priced", (
   });
 });
 
+describe("fetch-total-validator-earnings.js, given a wrong option", () => {
+  for (const [args, option] of [
+    [["--vote-pubkey", "abc"], "--vote-pubkey <pubkey>"],
+    [["--vote-pubkey", "0OIl" + "1".repeat(40)], "--vote-pubkey <pubkey>"],
+    [["--liquidity-pool-address", "not-a-key"], "--liquidity-pool-address"],
+    [["--rpc-url", "notaurl"], "--rpc-url <url>"],
+    [["--rpc-url", "ftp://example.com"], "--rpc-url <url>"],
+  ]) {
+    it(`refuses ${args.join(" ")} with exit code 1, naming the option, before it asks anything`, async () => {
+      const run = await runScript({
+        rpcUrl: "http://127.0.0.1:1",
+        geckoTerminalUrl: "http://127.0.0.1:1",
+        args,
+      });
+      assert.equal(run.code, 1);
+      assert.match(run.stderr, /argument '.*' is invalid/);
+      assert.ok(run.stderr.includes(option), run.stderr);
+      assert.doesNotMatch(run.stderr, /ECONNREFUSED/);
+    });
+  }
+});
+
 describe("fetch-total-validator-earnings.js, in verbose mode", () => {
   let standIns;
   let run;

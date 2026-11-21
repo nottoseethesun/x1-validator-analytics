@@ -13,7 +13,10 @@
  * crypto-price-fetchers the npm targets run: its versions tool, which
  * `npm run github-project-deps` runs, and `run-actionlint`, which the lint
  * and `npm run audit:actionlint` run. A second test holds the list to the
- * repo, so a command line added later is held to the rule too.
+ * repo, so a command line added later is held to the rule too. Each
+ * command line's help also runs into a pipe closed before the help is
+ * written, as `head` closes it, and must end with exit code 0 and nothing
+ * on stderr.
  */
 
 import { describe, it } from "node:test";
@@ -24,6 +27,7 @@ import { fileURLToPath } from "node:url";
 import {
   filesRunBy,
   filesUsingCommander,
+  helpIntoClosedPipe,
   helpOf,
   helpProblems,
 } from "crypto-price-fetchers/lib/command-line-help";
@@ -71,6 +75,18 @@ describe("every command line's help", () => {
       const help = helpOf(REPO_TOP, commandLine, "--help");
       assert.deepEqual(helpProblems(help), []);
       assert.deepEqual(helpOf(REPO_TOP, commandLine, "-h"), help);
+    });
+  }
+});
+
+describe("every command line's help into a closed pipe", () => {
+  for (const commandLine of COMMAND_LINES) {
+    const name = [commandLine.file, ...commandLine.command].join(" ");
+    it(`${name} ends quietly, with exit code 0, when the program reading its help has closed the pipe`, async () => {
+      assert.deepEqual(await helpIntoClosedPipe(REPO_TOP, commandLine), {
+        status: 0,
+        stderr: "",
+      });
     });
   }
 });

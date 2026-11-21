@@ -122,10 +122,13 @@ keeps the repo's history, ignores, encrypted with the owner's password.
 This repo installs
 [crypto-price-fetchers](https://github.com/nottoseethesun/crypto-price-fetchers)
 from GitHub, as a dependency `npm install` installs, for the GeckoTerminal
-client, the key store, the security lint's rule against printing a
-secret, and `run-actionlint`, which runs actionlint, the checker of GitHub
-Actions workflow files, from its official release, refused unless its
-SHA-256 is the one crypto-price-fetchers pins. `package.json` names its main branch (`#main`), and
+client, the key store, the lint rules against printing a secret and
+against a default made with `||` (`no-or-default`), `run-actionlint`,
+which runs actionlint, the checker of GitHub Actions workflow files, from
+its official release, refused unless its SHA-256 and its program's are the
+ones crypto-price-fetchers pins, the helpers that check an url and end a
+command line quietly when its output closes, and the checks its tests make
+of each command line's help and of the repo's tracked files. `package.json` names its main branch (`#main`), and
 `package-lock.json` keeps the commit installed, which `npm ci` installs.
 crypto-price-fetchers' versions tool, which this repo runs as
 `npm run github-project-deps`, moves it: `-- main` to main's newest commit,
