@@ -143,9 +143,7 @@ checked over the full history on 2026-11-10.
 
 ## Known bugs
 
-One is known: in verbose mode, the script prints `Epoch Start Slot:
-undefined`, since the answer to `getEpochInfo` has no `epochStartSlot`.
-When one is found, it gets a test in
+None is known. When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the

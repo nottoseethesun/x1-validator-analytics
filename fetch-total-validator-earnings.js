@@ -188,7 +188,9 @@ async function logRpcHealth(connection, verbose) {
     const epochInfo = await connection.getEpochInfo();
     console.log(`RPC Health - Current Epoch: ${epochInfo.epoch}`);
     console.log(`Absolute Slot: ${epochInfo.absoluteSlot}`);
-    console.log("Epoch Start Slot:", epochInfo.epochStartSlot || "undefined");
+    console.log(
+      `Epoch Start Slot: ${epochInfo.absoluteSlot - epochInfo.slotIndex}`,
+    );
   } catch (e) {
     console.error("RPC health check failed:", e.message);
   }
