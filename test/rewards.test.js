@@ -7,7 +7,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { rewardRows } from "../rewards.js";
-import { analyticsMetrics, summarizeRewards } from "../summary.js";
+import { analyticsMetrics, countEpochs, summarizeRewards } from "../summary.js";
 
 const REWARDS = [
   {
@@ -34,6 +34,7 @@ const COUNTS = {
   failedEpochs: 16,
   lowEpochFailures: 16,
   unexpectedFailures: 0,
+  epochsWithoutReward: 0,
   expectedEpochs: 14,
 };
 
@@ -124,6 +125,37 @@ describe("summarizeRewards", () => {
   });
 });
 
+describe("countEpochs", () => {
+  /**
+   * The outcomes of epochs 0 to 29 for an account that began at epoch 20:
+   * no reward before, a failed query at 15, and a missed reward at 25.
+   */
+  const outcomes = Array.from({ length: 30 }, (_, epoch) => {
+    if (epoch === 15) return { epoch, outcome: "failed" };
+    if (epoch < 20 || epoch === 25) return { epoch, outcome: "none" };
+    return { epoch, outcome: "reward" };
+  });
+
+  it("counts the failed queries apart from the epochs answered with no reward, and the early failures apart from the later", () => {
+    assert.deepEqual(
+      countEpochs([...outcomes, { epoch: 30, outcome: "failed" }]),
+      {
+        totalEpochsProcessed: 31,
+        failedEpochs: 2,
+        lowEpochFailures: 1,
+        unexpectedFailures: 1,
+        epochsWithoutReward: 20,
+        expectedEpochs: 10,
+      },
+    );
+  });
+
+  it("expects the epochs from the account's first reward on, less the failed queries", () => {
+    assert.equal(countEpochs(outcomes).expectedEpochs, 10);
+    assert.equal(countEpochs([]).expectedEpochs, 0);
+  });
+});
+
 describe("analyticsMetrics", () => {
   const metrics = analyticsMetrics(
     summarizeRewards(rewardRows(REWARDS, PRICES), COUNTS),
@@ -141,6 +173,22 @@ describe("analyticsMetrics", () => {
     assert.deepEqual(
       metrics.find(([name]) => name === "Rewards Without an XNT Price"),
       ["Rewards Without an XNT Price", 1],
+    );
+  });
+
+  it("names the failed queries, the early ones expected after the rollback among them, apart from the epochs without a reward", () => {
+    assert.deepEqual(
+      metrics.filter(([name]) => /Fail|Without a Reward|Expected/.test(name)),
+      [
+        ["Epochs Without a Reward", 0],
+        [
+          "Percentage of Expected Epochs with Rewards (from the first reward on, less failed queries)",
+          "21.43",
+        ],
+        ["Failed Epoch Queries", 16],
+        ["Unexpected Failed Epoch Queries", 0],
+        ["Early Epoch Failures (expected from rollback)", 16],
+      ],
     );
   });
 });

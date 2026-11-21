@@ -145,8 +145,9 @@ GeckoTerminal served locally. `test/README.md` lists them.
 `test/repo-checks.test.js` holds the repo's tracked files to
 crypto-price-fetchers' checks (`crypto-price-fetchers/lib/repo-checks`):
 every EVM address in EIP-55's form, every npm target named in
-`docs/npm-project-commands.md`, and every test file and helper named in
-the docs.
+`docs/npm-project-commands.md`, every test file and helper named in the
+docs, and every link and path in a doc pointing at a file, folder or
+heading the repo keeps.
 
 ```bash
 npm ci
@@ -161,13 +162,7 @@ checked over the full history on 2026-11-10.
 
 ## Known bugs
 
-Five are known. The json export's `activationEpochApprox` is the first of
-the last five epochs the account earned credits in, as `getVoteAccounts`
-gives them, not its first reward's. An epoch the endpoint answers with no
-reward for the account is counted as a failed query, which skews the
-counts of failures and the share of expected epochs with a reward. The
-requests to the X1 endpoint have no time limit. `config.json`'s
-`votePubkey` and `json` are never read. When one is found, it gets a test in
+None is known. When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the

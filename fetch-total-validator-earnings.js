@@ -14,7 +14,10 @@
  * @notes
  * - Processes from current-1 back to epoch 0 by default (full history).
  * - Uses X1-specific getInflationReward (epoch as plain u64).
- * - Per-epoch error handling: skips failed queries without crashing.
+ * - Per-epoch error handling: a failed query is skipped and counted, apart from an epoch the endpoint
+ *   answers with no reward for the account, as it does for an epoch before the account began.
+ * - Each request to the X1 endpoint gets an answer within requestTimeoutSeconds of config.json, 30
+ *   unless set, or counts as failed.
  * - Amounts are exact: XNT has nine decimal places, and every amount and XNT total keeps all nine.
  * - Each reward's price is XNT's in the USD stablecoin of the pool at liquidityPoolAddress, from
  *   GeckoTerminal's hourly candles: the close of the last candle that opened at or before the
@@ -27,7 +30,8 @@
  * - Generates separate analytics CSV (xnt_rewards_analytics.csv).
  * - Optional JSON export (xnt_rewards.json) includes metadata, summary, and full rewards array.
  * - CSV files include UTF-8 BOM for correct opening in LibreOffice/Excel.
- * - Early epoch failures (<=15) are expected due to X1 rollback/reboot.
+ * - A failed query in epochs 0 to 15 is expected: X1's chain was rolled back early in its life, and its
+ *   endpoint cannot give the rewards of some of those epochs, epoch 15 among them.
  * - Reward dates now use real block time from effectiveSlot + getBlockTime() when available.
  * - Settings come from config.json in the folder the script runs in (see configLoader.js).
  * - Requires Node 24 or later, as the repo's package.json says.
@@ -44,7 +48,7 @@ import { writeJsonExport } from "./jsonWriter.js";
 import { formatXnt } from "./xnt-amount.js";
 import { geckoTerminalSource, priceTimes } from "./xnt-price.js";
 import { rewardRows } from "./rewards.js";
-import { summarizeRewards } from "./summary.js";
+import { countEpochs, summarizeRewards } from "./summary.js";
 
 /**
  * Prices each reward at its own time, from GeckoTerminal's hourly candles.
@@ -224,13 +228,50 @@ function parseArguments(config, argv = process.argv) {
 }
 
 /**
- * Creates and returns a Solana Connection object.
+ * A fetch that gives up on a request that has no answer within the time
+ * limit, for web3.js, which sends its requests with no limit of its own.
+ *
+ * @param {number} limitSeconds - How long a request may take, in seconds
+ * @returns {function(string, Object=): Promise<Response>} The fetch
+ * @throws {Error} When the limit is not a number of seconds above 0
+ */
+function fetchWithTimeLimit(limitSeconds) {
+  if (typeof limitSeconds !== "number" || !(limitSeconds > 0)) {
+    throw new Error(
+      `config.json's requestTimeoutSeconds must be a number of seconds above 0, not ${JSON.stringify(limitSeconds)}`,
+    );
+  }
+  return async (url, options = {}) => {
+    const limit = AbortSignal.timeout(limitSeconds * 1000);
+    const signal =
+      options.signal === undefined || options.signal === null
+        ? limit
+        : AbortSignal.any([options.signal, limit]);
+    try {
+      return await fetch(url, { ...options, signal });
+    } catch (error) {
+      if (error?.name !== "TimeoutError") throw error;
+      throw new Error(
+        `The X1 endpoint at ${url} gave no answer within ${limitSeconds} seconds`,
+        { cause: error },
+      );
+    }
+  };
+}
+
+/**
+ * Creates and returns a Solana Connection object, whose requests each get
+ * an answer within the time limit or fail.
  *
  * @param {string} rpcUrl - The RPC endpoint URL.
+ * @param {number} requestTimeoutSeconds - How long a request may take, in seconds.
  * @returns {Connection} Initialized Solana Connection.
  */
-function createConnection(rpcUrl) {
-  return new Connection(rpcUrl, "confirmed");
+function createConnection(rpcUrl, requestTimeoutSeconds) {
+  return new Connection(rpcUrl, {
+    commitment: "confirmed",
+    fetch: fetchWithTimeLimit(requestTimeoutSeconds),
+  });
 }
 
 /**
@@ -269,7 +310,8 @@ async function getVoteBalance(connection, votePubkey) {
 }
 
 /**
- * Finds the vote account object from current and delinquent lists.
+ * Finds the vote account among the chain's current and delinquent ones, so
+ * that a key that names none stops the run before it reads any epoch.
  *
  * @param {Connection} connection - Solana connection instance.
  * @param {PublicKey} votePubkey - Vote account public key.
@@ -310,8 +352,9 @@ async function getCurrentEpoch(connection) {
  * @param {number} epoch - Epoch number to query.
  * @param {boolean} verbose - Whether to log raw response and errors.
  * @param {number} currentEpoch - Current epoch (for fallback time approximation).
- * @returns {Promise<{epoch: number, timestamp: number, lamports: bigint}|null>} The reward, with its time in
- *   unix seconds and its amount in lamports, if positive; null otherwise.
+ * @returns {Promise<{outcome: "reward", reward: {epoch: number, timestamp: number, lamports: bigint}}|{outcome: "none"}|{outcome: "failed"}>}
+ *   The reward, with its time in unix seconds and its amount in lamports; or `none` when the endpoint
+ *   answered with no reward for the account, or a reward of 0; or `failed` when the query failed.
  */
 async function fetchSingleEpochReward(
   connection,
@@ -322,68 +365,66 @@ async function fetchSingleEpochReward(
 ) {
   if (verbose) console.log(`Querying inflation reward for epoch ${epoch}...`);
 
+  let inflationReward;
   try {
-    const inflationReward = await connection.getInflationReward(
-      [votePubkey],
-      epoch,
-    );
-
-    if (verbose) {
-      // web3.js gives the amounts and slots as BigInts, which JSON writes
-      // only as strings
-      console.log(
-        `Raw response for epoch ${epoch}:`,
-        JSON.stringify(
-          inflationReward,
-          (_key, value) => (typeof value === "bigint" ? `${value}` : value),
-          2,
-        ),
-      );
-    }
-
-    const reward = inflationReward?.[0] ?? null;
-
-    if (reward?.amount > 0) {
-      let rewardTimestamp;
-
-      // Try to get real block time from effectiveSlot. web3.js gives a block
-      // time as a BigInt of unix seconds, or null when it has none.
-      if (reward.effectiveSlot !== undefined) {
-        try {
-          const blockTime = await connection.getBlockTime(reward.effectiveSlot);
-          rewardTimestamp = blockTime === null ? null : Number(blockTime);
-          if (verbose && rewardTimestamp) {
-            console.log(
-              `Using real block time for epoch ${epoch}: ${rewardTimestamp}`,
-            );
-          }
-        } catch (e) {
-          if (verbose)
-            console.warn(
-              `getBlockTime failed for slot ${reward.effectiveSlot} in epoch ${epoch}: ${e.message}`,
-            );
-        }
-      }
-
-      // Fallback to approximation if no slot or getBlockTime failed
-      if (!rewardTimestamp) {
-        rewardTimestamp =
-          Math.floor(Date.now() / 1000) - (currentEpoch - epoch) * 24 * 60 * 60;
-        if (verbose) console.log(`Using fallback timestamp for epoch ${epoch}`);
-      }
-
-      return {
-        epoch,
-        timestamp: rewardTimestamp,
-        lamports: BigInt(reward.amount),
-      };
-    }
-
-    return null;
+    inflationReward = await connection.getInflationReward([votePubkey], epoch);
   } catch (e) {
     if (verbose) console.warn(`Failed to query epoch ${epoch}: ${e.message}`);
-    return null;
+    return { outcome: "failed" };
   }
+
+  if (verbose) {
+    // web3.js gives the amounts and slots as BigInts, which JSON writes
+    // only as strings
+    console.log(
+      `Raw response for epoch ${epoch}:`,
+      JSON.stringify(
+        inflationReward,
+        (_key, value) => (typeof value === "bigint" ? `${value}` : value),
+        2,
+      ),
+    );
+  }
+
+  const reward = inflationReward?.[0] ?? null;
+  if (reward === null || !(reward.amount > 0)) return { outcome: "none" };
+
+  let rewardTimestamp;
+
+  // Try to get real block time from effectiveSlot. web3.js gives a block
+  // time as a BigInt of unix seconds, or null when it has none.
+  if (reward.effectiveSlot !== undefined) {
+    try {
+      const blockTime = await connection.getBlockTime(reward.effectiveSlot);
+      rewardTimestamp = blockTime === null ? null : Number(blockTime);
+      if (verbose && rewardTimestamp) {
+        console.log(
+          `Using real block time for epoch ${epoch}: ${rewardTimestamp}`,
+        );
+      }
+    } catch (e) {
+      if (verbose)
+        console.warn(
+          `getBlockTime failed for slot ${reward.effectiveSlot} in epoch ${epoch}: ${e.message}`,
+        );
+    }
+  }
+
+  // Fallback to approximation if no slot or getBlockTime failed
+  if (!rewardTimestamp) {
+    rewardTimestamp =
+      Math.floor(Date.now() / 1000) - (currentEpoch - epoch) * 24 * 60 * 60;
+    if (verbose) console.log(`Using fallback timestamp for epoch ${epoch}`);
+  }
+
+  return {
+    outcome: "reward",
+    reward: {
+      epoch,
+      timestamp: rewardTimestamp,
+      lamports: BigInt(reward.amount),
+    },
+  };
 }
 
 /**
@@ -417,7 +458,7 @@ function displayProgressBar(current, total) {
  * @param {number} currentEpoch - Current epoch number.
  * @param {boolean} verbose - Whether to log detailed information.
  * @param {number|null} maxEpochs - Max number of epochs to process (null = unlimited).
- * @returns {Promise<{rewards: Array, totalEpochsProcessed: number, failedEpochs: number, lowEpochFailures: number, unexpectedFailures: number, expectedEpochs: number}>}
+ * @returns {Promise<{rewards: Array, counts: Object}>} The rewards, and the epochs counted by outcome (`countEpochs`)
  */
 async function fetchRewardsForEpochs(
   connection,
@@ -427,10 +468,7 @@ async function fetchRewardsForEpochs(
   maxEpochs = null,
 ) {
   const rewards = [];
-  let processedCount = 0;
-  let failedCount = 0;
-  let lowEpochFailures = 0;
-  let unexpectedFailures = 0;
+  const outcomes = [];
 
   const estimatedTotal =
     maxEpochs !== null && maxEpochs !== undefined ? maxEpochs : currentEpoch;
@@ -440,38 +478,30 @@ async function fetchRewardsForEpochs(
   const updateInterval = 5;
 
   for (let epoch = currentEpoch - 1; epoch >= 0; epoch--) {
-    const reward = await fetchSingleEpochReward(
+    const found = await fetchSingleEpochReward(
       connection,
       votePubkey,
       epoch,
       verbose,
       currentEpoch,
     );
+    outcomes.push({ epoch, outcome: found.outcome });
 
-    if (reward === null) {
-      failedCount++;
-      if (epoch <= 15) {
-        lowEpochFailures++;
-      } else {
-        unexpectedFailures++;
-      }
-    } else {
-      rewards.push(reward);
+    if (found.outcome === "reward") {
+      rewards.push(found.reward);
       console.log(
-        `Found reward in epoch ${epoch}: ${formatXnt(reward.lamports)} XNT`,
+        `Found reward in epoch ${epoch}: ${formatXnt(found.reward.lamports)} XNT`,
       );
     }
 
-    processedCount++;
-
-    if (!verbose && processedCount % updateInterval === 0) {
-      displayProgressBar(processedCount, estimatedTotal);
+    if (!verbose && outcomes.length % updateInterval === 0) {
+      displayProgressBar(outcomes.length, estimatedTotal);
     }
 
     if (
       maxEpochs !== null &&
       maxEpochs !== undefined &&
-      processedCount >= maxEpochs
+      outcomes.length >= maxEpochs
     ) {
       if (verbose)
         console.log(
@@ -483,22 +513,14 @@ async function fetchRewardsForEpochs(
 
   if (!verbose) process.stdout.write("\r" + " ".repeat(80) + "\r");
 
-  if (failedCount > 0) {
+  const counts = countEpochs(outcomes);
+  if (counts.failedEpochs > 0) {
     console.warn(
-      `Warning: ${failedCount} epochs failed to query (skipped gracefully).`,
+      `Warning: ${counts.failedEpochs} epochs failed to query (skipped gracefully).`,
     );
   }
 
-  const expectedEpochs = processedCount - lowEpochFailures;
-
-  return {
-    rewards,
-    totalEpochsProcessed: processedCount,
-    failedEpochs: failedCount,
-    lowEpochFailures,
-    unexpectedFailures,
-    expectedEpochs,
-  };
+  return { rewards, counts };
 }
 
 /**
@@ -514,22 +536,19 @@ function printSummary(summary) {
   console.log(`  Average $XNT earned per day: ${summary.averageDailyXnt}`);
   console.log(`  Total epochs processed: ${summary.totalEpochsProcessed}`);
   console.log(`  Total epochs with rewards: ${summary.epochsWithRewards}`);
+  console.log(`  Epochs without a reward: ${summary.epochsWithoutReward}`);
   console.log(`  Rewards without an XNT price: ${summary.rewardsWithoutPrice}`);
   console.log(
-    `  Percentage of Expected Epochs with Rewards (accounts for early chain rollback): ${summary.percentageExpectedWithRewards}%`,
+    `  Percentage of Expected Epochs with Rewards (from the first reward on, less failed queries): ${summary.percentageExpectedWithRewards}%`,
   );
   console.log(`  Average $XNT per epoch: ${summary.averagePerEpochXnt}`);
+  console.log(`  Failed epoch queries: ${summary.failedEpochs}`);
   console.log(
-    `  Unexpected failed epoch queries: ${summary.unexpectedFailures} (outside expected early range)`,
+    `  Unexpected failed epoch queries: ${summary.unexpectedFailures} (outside epochs 0 to 15)`,
   );
-  if (summary.failedEpochs > 0) {
-    console.log(
-      `  Failed epoch queries (due to early X1 chain roll-back, see "Unexpected failed epoch queries"): ${summary.failedEpochs}`,
-    );
-  }
   if (summary.lowEpochFailures > 0) {
     console.log(
-      `  Note: ${summary.lowEpochFailures} failures in early epochs (<=15) are expected due to the X1 Mainnet Buenos Aires Reboot/rollback — pre-reboot ledger data is not queryable on the current chain.`,
+      `  Note: ${summary.lowEpochFailures} failed queries in epochs 0 to 15 are expected: X1's chain was rolled back early in its life, and its endpoint cannot give the rewards of some of those epochs.`,
     );
   }
 }
@@ -541,21 +560,20 @@ async function main() {
   const config = loadConfig();
   const argv = parseArguments(config);
 
-  const connection = createConnection(argv.rpcUrl);
+  const connection = createConnection(
+    argv.rpcUrl,
+    config.requestTimeoutSeconds,
+  );
   const votePubkey = new PublicKey(argv.votePubkey);
 
   await logRpcHealth(connection, argv.verbose);
   await getVoteBalance(connection, votePubkey);
 
-  const myVoteAccount = await findVoteAccount(connection, votePubkey);
-  // The first epoch the account earned credits in, a BigInt from web3.js
-  const firstCreditEpoch = myVoteAccount.epochCredits?.[0]?.[0];
-  const activationEpoch =
-    firstCreditEpoch === undefined ? 0 : Number(firstCreditEpoch);
+  await findVoteAccount(connection, votePubkey);
 
   const currentEpoch = await getCurrentEpoch(connection);
 
-  const { rewards, ...counts } = await fetchRewardsForEpochs(
+  const { rewards, counts } = await fetchRewardsForEpochs(
     connection,
     votePubkey,
     currentEpoch,
@@ -591,8 +609,10 @@ async function main() {
   writeMainCsv(rows, argv.output);
   writeAnalyticsCsv(summary);
 
-  // Optional JSON export
-  writeJsonExport(rows, summary, { currentEpoch, activationEpoch }, argv.json);
+  // Optional JSON export, with the first epoch among those read in which
+  // the account had a reward
+  const firstRewardEpoch = Math.min(...rewards.map((reward) => reward.epoch));
+  writeJsonExport(rows, summary, { currentEpoch, firstRewardEpoch }, argv.json);
 }
 
 endQuietlyWhenOutputCloses();
