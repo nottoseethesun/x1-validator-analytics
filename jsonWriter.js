@@ -15,13 +15,13 @@ import { analyticsMetrics } from "./summary.js";
  * @param {Object} summary - The run's summary (`summarizeRewards` in summary.js).
  * @param {Object} chain - What the chain said about the vote account.
  * @param {number} chain.currentEpoch - Current chain epoch.
- * @param {number} chain.activationEpoch - Approx activation epoch.
+ * @param {number} chain.firstRewardEpoch - The first epoch, among those read, in which the account had a reward.
  * @param {boolean} exportJson - Whether to write JSON (from --json flag).
  */
 export function writeJsonExport(
   rows,
   summary,
-  { currentEpoch, activationEpoch },
+  { currentEpoch, firstRewardEpoch },
   exportJson,
 ) {
   if (!exportJson) return;
@@ -31,8 +31,9 @@ export function writeJsonExport(
     metadata: {
       generatedAt: new Date().toISOString(),
       currentEpoch,
-      activationEpochApprox: activationEpoch,
+      firstRewardEpoch,
       totalEpochsProcessed: summary.totalEpochsProcessed,
+      epochsWithoutReward: summary.epochsWithoutReward,
       failedEpochs: summary.failedEpochs,
       lowEpochFailures: summary.lowEpochFailures,
       unexpectedFailures: summary.unexpectedFailures,
@@ -50,10 +51,11 @@ export function writeJsonExport(
       averagePerEpochXNT: summary.averagePerEpochXnt,
       percentageOfExpectedEpochsWithRewards:
         summary.percentageExpectedWithRewards +
-        "% (accounts for early chain rollback)",
+        "% (from the first reward on, less failed queries)",
+      epochsWithoutReward: summary.epochsWithoutReward,
+      failedEpochQueries: summary.failedEpochs,
       unexpectedFailedEpochQueries:
-        summary.unexpectedFailures + " (outside expected early range)",
-      failedEpochQueriesDueToRollback: summary.failedEpochs,
+        summary.unexpectedFailures + " (outside epochs 0 to 15)",
       earlyEpochFailuresExpectedFromRollback: summary.lowEpochFailures,
     },
     rewards: rows.map((r) => ({

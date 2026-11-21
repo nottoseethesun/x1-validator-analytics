@@ -52,14 +52,22 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 ## A Run
 
 1. The settings come from `config.json` and the command line: the X1
-   endpoint, the vote account, the pool prices come from, the output file,
-   and how many epochs to read.
+   endpoint, how long a request to it may go without an answer before it
+   counts as failed (`requestTimeoutSeconds`, 30 unless set), the vote
+   account, the pool prices come from, the output file, and how many epochs
+   to read.
 2. The script finds the vote account and the current epoch, then asks the
    endpoint for the account's inflation reward in each epoch, from the last
    completed one back to epoch 0, or as many as asked. A reward's time is
-   the block time of its slot. An epoch the endpoint cannot answer is
-   skipped and counted. X1's chain was rolled back early in its life, so
-   its endpoint cannot answer for epochs 0 to 15: those fail as expected.
+   the block time of its slot. The endpoint answers an epoch with the
+   account's reward, or with none, as it does for an epoch before the
+   account began or one it missed; or the query fails, and the epoch is
+   skipped. Each outcome is counted. X1's chain was rolled back early in
+   its life, and the endpoint cannot give the rewards of some epochs from
+   0 to 15, epoch 15 among them, so a failed query there is counted as
+   expected. The share of expected epochs with a reward counts the epochs
+   from the account's first reward on, less those whose query failed. The
+   json export names that first reward's epoch.
 3. It prices each reward at its own time (see [Prices](#prices)).
 4. It writes one row per reward, oldest first, with the running totals of
    XNT and USD, the analytics summary beside it, and, with `--json`, both as

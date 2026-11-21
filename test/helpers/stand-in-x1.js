@@ -9,10 +9,14 @@
  * child process, against a chain whose answers the test controls. The
  * stand-in chain uses X1's 216,000 slots per epoch, and pays the vote
  * account the same reward every epoch, at the first slot of the next epoch,
- * except for the early epochs a test says fail, as X1's do after its
+ * but in the epochs a test says it answers with no reward, as X1's live
+ * endpoint answers for an epoch before an account began or one it missed,
+ * and the epochs a test says fail, as X1's epoch 15 does after its
  * rollback. Its block times count back from the time the test names at
  * X1's 0.366 seconds per slot. It answers the five methods the script
- * calls, and gives a json-rpc error for any other.
+ * calls, and gives a json-rpc error for any other; it gives the account's
+ * credits for the last five epochs, as `getVoteAccounts` does. A test may
+ * also have it answer nothing at all, as a stalled endpoint does.
  */
 
 import http from "node:http";
@@ -72,7 +76,7 @@ export function rewardSeconds(chain, epoch) {
 function inflationReward(params, chain) {
   const config = params[1];
   const epoch = typeof config === "number" ? config : config.epoch;
-  if (epoch <= chain.failEpochsThrough) {
+  if (epoch <= chain.failEpochsThrough || chain.failEpochs.includes(epoch)) {
     return {
       error: {
         code: -32004,
@@ -80,6 +84,8 @@ function inflationReward(params, chain) {
       },
     };
   }
+  if (epoch <= chain.noRewardThrough || chain.noRewardEpochs.includes(epoch))
+    return { result: [null] };
   const reward = {
     epoch,
     effectiveSlot: (epoch + 1) * SLOTS_PER_EPOCH,
@@ -123,7 +129,11 @@ function answer(method, params, chain) {
               nodePubkey: NODE_PUBKEY,
               activatedStake: 1,
               epochVoteAccount: true,
-              epochCredits: [[Math.max(chain.currentEpoch - 100, 0), 10, 0]],
+              epochCredits: [4, 3, 2, 1, 0].map((back) => [
+                chain.currentEpoch - back,
+                100 - back * 10,
+                90 - back * 10,
+              ]),
               commission: 10,
               lastVote: slot,
               rootSlot: slot,
@@ -155,6 +165,10 @@ function answer(method, params, chain) {
  * @param {number} options.nowSeconds - The chain's current time, in unix seconds
  * @param {number} [options.currentEpoch=500] - The chain's current epoch
  * @param {number} [options.failEpochsThrough=-1] - The last of the early epochs whose reward query fails
+ * @param {number[]} [options.failEpochs=[]] - Other epochs whose reward query fails
+ * @param {number} [options.noRewardThrough=-1] - The last of the early epochs answered with no reward for the account
+ * @param {number[]} [options.noRewardEpochs=[]] - Other epochs answered with no reward for the account
+ * @param {boolean} [options.stalled=false] - Whether it takes each request and answers none
  * @returns {Promise<{url: string, chain: Object, close: function(): Promise<void>}>} The endpoint's url,
  *   the chain's settings, as `rewardSeconds` takes them, and a way to stop it
  */
@@ -164,6 +178,10 @@ export function startStandInX1({
   nowSeconds,
   currentEpoch = 500,
   failEpochsThrough = -1,
+  failEpochs = [],
+  noRewardThrough = -1,
+  noRewardEpochs = [],
+  stalled = false,
 }) {
   const chain = {
     votePubkey,
@@ -171,8 +189,12 @@ export function startStandInX1({
     nowSeconds,
     currentEpoch,
     failEpochsThrough,
+    failEpochs,
+    noRewardThrough,
+    noRewardEpochs,
   };
   const server = http.createServer((request, response) => {
+    if (stalled) return;
     let body = "";
     request.on("data", (chunk) => {
       body += chunk;

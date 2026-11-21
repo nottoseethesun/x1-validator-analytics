@@ -14,6 +14,7 @@
 
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
 import { startStandInX1, rewardSeconds } from "./helpers/stand-in-x1.js";
 import {
   XNT,
@@ -399,5 +400,155 @@ describe("fetch-total-validator-earnings.js, when GeckoTerminal cannot give pric
       run.stderr,
       /Warning: no XNT prices, since GeckoTerminal could not give them \(GeckoTerminal answered 500/,
     );
+  });
+});
+
+describe("fetch-total-validator-earnings.js, an account that began at epoch 20", () => {
+  let standIns;
+  let run;
+
+  before(async () => {
+    // As X1's endpoint answers: no reward before the account began, nor for
+    // epoch 25, which it missed; a failed query for epoch 15, after the
+    // rollback; and the account's credits for the last five epochs, 26 to 30
+    standIns = await startStandIns(
+      {
+        currentEpoch: 30,
+        noRewardThrough: 19,
+        noRewardEpochs: [25],
+        failEpochs: [15],
+      },
+      (chain) => ({
+        candles: flatCandles(
+          hourOf(rewardSeconds(chain, 20)) - 48 * HOUR,
+          hourOf(rewardSeconds(chain, 29)) + HOUR,
+          0.2,
+        ),
+      }),
+    );
+    run = await runScript({
+      rpcUrl: standIns.x1.url,
+      geckoTerminalUrl: standIns.server.url,
+      args: ["--json"],
+    });
+  });
+
+  after(async () => {
+    if (standIns !== undefined) await standIns.close();
+  });
+
+  it("exits with code 0 and writes a row for each reward, from epoch 20, less epoch 25", () => {
+    assert.equal(run.code, 0, run.stderr);
+    assert.deepEqual(
+      run.rows.map((row) => Number(row.Epoch)),
+      [20, 21, 22, 23, 24, 26, 27, 28, 29],
+    );
+  });
+
+  it("names, in the json export, the first epoch the account had a reward in, not the first of the last five epochs it earned credits in", () => {
+    assert.equal(run.json.metadata.firstRewardEpoch, 20);
+    assert.equal("activationEpochApprox" in run.json.metadata, false);
+  });
+
+  it("counts an epoch answered with no reward apart from a failed query", () => {
+    assert.equal(metric(run.analytics, "Failed Epoch Queries"), "1");
+    assert.equal(
+      metric(run.analytics, "Early Epoch Failures (expected from rollback)"),
+      "1",
+    );
+    assert.equal(metric(run.analytics, "Unexpected Failed Epoch Queries"), "0");
+    assert.equal(metric(run.analytics, "Epochs Without a Reward"), "20");
+    assert.equal(run.json.metadata.epochsWithoutReward, 20);
+  });
+
+  it("gives the share of the expected epochs with a reward from the account's first reward on, less the failed queries", () => {
+    assert.equal(
+      metric(
+        run.analytics,
+        "Percentage of Expected Epochs with Rewards (from the first reward on, less failed queries)",
+      ),
+      "90.00",
+    );
+    assert.equal(
+      metric(run.analytics, "Percentage of Epochs with Rewards"),
+      "30.00",
+    );
+  });
+
+  it("warns of the one failed query, and prints the counts", () => {
+    assert.match(run.stderr, /Warning: 1 epochs failed to query/);
+    assert.match(run.stdout, /Epochs without a reward: 20\n/);
+    assert.match(run.stdout, /Failed epoch queries: 1\n/);
+    assert.match(
+      run.stdout,
+      /Note: 1 failed queries in epochs 0 to 15 are expected/,
+    );
+  });
+});
+
+describe("fetch-total-validator-earnings.js, against an endpoint that does not answer", () => {
+  let standIns;
+  let run;
+
+  before(async () => {
+    standIns = await startStandIns({ stalled: true }, () => ({ candles: [] }));
+    run = await runScript({
+      rpcUrl: standIns.x1.url,
+      geckoTerminalUrl: standIns.server.url,
+      config: { requestTimeoutSeconds: 1 },
+      timeoutMs: 15000,
+    });
+  });
+
+  after(async () => {
+    if (standIns !== undefined) await standIns.close();
+  });
+
+  it("stops waiting after requestTimeoutSeconds, saying so, with exit code 1", () => {
+    assert.equal(run.killed, false, "the run was stopped after 15 seconds");
+    assert.equal(run.code, 1);
+    assert.match(
+      run.stderr,
+      /^Error: The X1 endpoint at http:\/\/127\.0\.0\.1:\d+ gave no answer within 1 seconds$/m,
+    );
+  });
+});
+
+describe("fetch-total-validator-earnings.js, with a time limit config.json cannot give", () => {
+  it("refuses requestTimeoutSeconds that is not a number of seconds above 0, with exit code 1", async () => {
+    const standIns = await startStandIns({}, () => ({ candles: [] }));
+    try {
+      for (const limit of ["abc", 0, -5]) {
+        const run = await runScript({
+          rpcUrl: standIns.x1.url,
+          geckoTerminalUrl: standIns.server.url,
+          config: { requestTimeoutSeconds: limit },
+        });
+        assert.equal(run.code, 1);
+        assert.match(
+          run.stderr,
+          /^Error: config\.json's requestTimeoutSeconds must be a number of seconds above 0, not /m,
+        );
+      }
+    } finally {
+      await standIns.close();
+    }
+  });
+});
+
+describe("config.json", () => {
+  it("holds only settings a program of the repo reads", () => {
+    const config = JSON.parse(
+      fs.readFileSync(new URL("../config.json", import.meta.url), "utf8"),
+    );
+    assert.deepEqual(Object.keys(config).sort(), [
+      "apiKeys",
+      "epochs",
+      "liquidityPoolAddress",
+      "outputFile",
+      "requestTimeoutSeconds",
+      "rpcUrl",
+      "verbose",
+    ]);
   });
 });

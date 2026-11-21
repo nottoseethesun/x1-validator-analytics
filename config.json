@@ -1,10 +1,9 @@
 {
   "rpcUrl": "https://rpc.mainnet.x1.xyz",
-  "votePubkey": "Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs",
+  "requestTimeoutSeconds": 30,
   "liquidityPoolAddress": "CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR",
   "outputFile": "xnt_rewards_with_prices.csv",
   "verbose": false,
   "epochs": null,
-  "json": false,
   "apiKeys": []
 }
