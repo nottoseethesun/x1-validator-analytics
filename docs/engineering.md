@@ -1,8 +1,11 @@
 # x1-validator-analytics — Engineering Reference
 
 The files the script reads and writes, the gates every change passes, the
-tests, and CI. For how the script works, see
-[`docs/architecture.md`](architecture.md); for every npm command, see
+tests, and CI: the same gates, run at each push by GitHub Actions, the
+service of GitHub, the website that hosts the repo. For how the script works, see
+[`docs/architecture.md`](architecture.md); for every command the
+repo's `package.json` gives npm, the package manager of Node, the program
+that runs JavaScript outside a browser, to run, see
 [`docs/npm-project-commands.md`](npm-project-commands.md).
 
 The repo follows the coding standards of LP Ranger, the owner's bot that
@@ -47,7 +50,8 @@ main's newest commit, and `-- release` to its latest release (see
 
 ## Files on Disk
 
-The script and its tests read and write these files. Git keeps only the
+The script and its tests read and write these files. Git, the version-control program that keeps the repo's history, keeps
+only the
 settings; the keys and the reports stay on the owner's computer.
 
 | File | In git | What it holds |
@@ -73,15 +77,15 @@ Node 24.
 
 The lint checks each file's form before any test runs: the rules the code
 follows, its formatting, the workflows, and files nothing uses.
-`npm run lint` runs five tools:
+`npm run lint` runs five tools, each an npm package:
 
-| Tool | Configured in | What it holds the repo to |
-| ---- | ------------- | ------------------------- |
-| ESLint | `eslint.config.js` | LP Ranger's rules, with no warning allowed: cyclomatic complexity ≤ 17, ≤ 500 lines of code a file (blank lines and comments not counted), lines ≤ 80 characters but strings, urls and comments, `===`, no unused name, no `var`, `const` where nothing is reassigned, no `Math.random`, no comment that tells Prettier to skip code, and every import resolved. |
-| markdownlint | `.markdownlint-cli2.jsonc` | LP Ranger's settings, over every Markdown file. |
-| Prettier | `.prettierrc`, `.prettierignore` | Its formatting, in check mode, over every JavaScript, JSON and YAML file. |
-| actionlint | — | The GitHub workflows. |
-| knip | `knip.json` | No file nothing reaches. See [Dead Code Detection](#dead-code-detection). |
+| Tool | Configured in | What it does, and what it holds the repo to |
+| ---- | ------------- | ------------------------------------------- |
+| ESLint | `eslint.config.js` | Checks JavaScript against rules: LP Ranger's, with no warning allowed: cyclomatic complexity ≤ 17, ≤ 500 lines of code a file (blank lines and comments not counted), lines ≤ 80 characters but strings, urls and comments, `===`, no unused name, no `var`, `const` where nothing is reassigned, no `Math.random`, no comment that tells Prettier, the formatter in the row below, to skip code, and every import resolved. |
+| markdownlint | `.markdownlint-cli2.jsonc` | Checks the form of Markdown files, with LP Ranger's settings, over every Markdown file. |
+| Prettier | `.prettierrc`, `.prettierignore` | Formats code; in check mode, it fails when its formatting would change any JavaScript, JSON or YAML file. |
+| actionlint | — | Checks the GitHub Actions workflow files, in `.github/workflows/`, for mistakes in their syntax and expressions. |
+| knip | `knip.json` | Finds files nothing imports or runs, and fails on any. See [Dead Code Detection](#dead-code-detection). |
 
 husky, a package that runs scripts at git's hooks, runs `npm run lint`
 before each commit (`.husky/pre-commit`); this repo's `prepare` script
@@ -106,7 +110,10 @@ than written again.
 ## Security Audits
 
 Three audits look for security problems: in the packages the repo
-installs, in the code, and in the text of every file.
+installs, through npm audit, npm's check of installed packages against
+known vulnerabilities; in the code, through ESLint with security rules;
+and in the text of every file, through secretlint, which looks for keys
+and credentials.
 
 | Command | What it runs | What it catches |
 | ------- | ------------ | --------------- |
