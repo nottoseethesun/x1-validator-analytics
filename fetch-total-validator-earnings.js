@@ -113,15 +113,18 @@ Examples:
     $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account>
   The last 20 epochs only, with each step logged:
     $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
-  Every reward, with a JSON file of all of it beside the CSV files:
+  Every reward, with the JSON files too, in the folder it runs in:
     $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
   The same first run, through npm:
     $ npm start -- --vote-pubkey <vote-account>
 
 Exit codes:
-  0  the CSV files were written, or the account had no rewards
-  1  an option was wrong or missing, config.json was refused, a request to
-     the chain failed, or the chain gave no block time for a reward`;
+  0  the CSV files were written, or the account had no rewards; a reward
+     query that failed is skipped, and the summary counts it, as
+     unexpected outside epochs 0 to 15
+  1  an option was wrong or missing, config.json was refused, the vote
+     account was not found, another request to the chain failed, or the
+     chain gave no block time for a reward`;
 
 /**
  * The parsers of the options that take a value, made from the kinds of

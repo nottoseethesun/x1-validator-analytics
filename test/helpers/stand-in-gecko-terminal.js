@@ -7,7 +7,9 @@
  * GeckoTerminal does: the candles that opened at or before
  * `before_timestamp`, newest first, up to `limit`, with the pool's pair in
  * `meta`. Asked in the pool's own exchange rate (`currency=token`), it gives
- * the test's candles; asked in USD (`currency=usd`), it gives GeckoTerminal's
+ * the test's candles, each closing at the test's price, with an open, a high
+ * and a low apart from it, so a test tells the close from the rest; asked in
+ * USD (`currency=usd`), it gives GeckoTerminal's
  * fixed USD price for XNT at every hour, as the live api does for X1. A test
  * can have it refuse its first requests with given statuses. It records
  * each url asked.
@@ -30,6 +32,11 @@ export const POOL = "CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR";
 
 /** GeckoTerminal's fixed USD price for XNT, which its USD candles show at every hour. */
 export const FIXED_USD_PRICE = 0.26583216633012297;
+
+/** A candle's open, high and low, as shares of its close, the test's price. */
+export const OPEN_SHARE = 0.9;
+export const HIGH_SHARE = 1.25;
+export const LOW_SHARE = 0.75;
 
 /**
  * Makes a stand-in GeckoTerminal for one pool.
@@ -81,9 +88,9 @@ export function standInGeckoTerminal({
       .slice(0, limit)
       .map(([open, price]) => [
         open,
-        priceOf(price),
-        priceOf(price),
-        priceOf(price),
+        priceOf(price * OPEN_SHARE),
+        priceOf(price * HIGH_SHARE),
+        priceOf(price * LOW_SHARE),
         priceOf(price),
         100,
       ]);

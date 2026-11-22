@@ -59,8 +59,10 @@ Two test files run the whole script, `fetch-total-validator-earnings.test.js` an
   takes; or answers nothing at all.
   `rewardSeconds` gives an epoch's reward time.
 - `helpers/stand-in-gecko-terminal.js` answers for a pool's hourly candles
-  as GeckoTerminal does, as a fetch or served on a local port. Asked in USD,
-  it gives one fixed price at every hour, as GeckoTerminal does for X1.
+  as GeckoTerminal does, as a fetch or served on a local port. Each candle
+  closes at the test's price, with an open, a high and a low apart from it,
+  so a test tells the close from the rest. Asked in USD, it gives one fixed
+  price at every hour, as GeckoTerminal does for X1.
 - `helpers/run-script.js` runs the script against both stand-ins, in a
   temp folder whose `config.json` the test writes, as settings or as text
   that need not be JSON, and reads the files it wrote.
