@@ -41,6 +41,7 @@ One test file runs the whole script; the others test one module each.
 | `csv-writer.test.js` | The rewards CSV and the analytics CSV, each starting with a UTF-8 BOM and ending with one newline, after its last row |
 | `api-keys.test.js` | The keys `config.json` lists, none today, the key manager, which saves and lists the api keys, and the copy of crypto-price-fetchers' `unlock-api-keys.sh`, the script that keeps the password for a terminal |
 | `command-line-help.test.js` | Every command line's help, `--help` and `-h`, and its help into a pipe closed before it is written, which must end with exit code 0 and nothing on stderr: the script's, the key manager's, and those of the bins of crypto-price-fetchers the npm targets run, its versions tool and `run-actionlint`, each with its options, examples and exit codes, by crypto-price-fetchers' checks (`crypto-price-fetchers/lib/command-line-help`); and that its list holds every command line the repo runs, every bin of crypto-price-fetchers among them |
+| `known-bugs.test.js` | The known bugs, each declared with `knownBug`, which passes while its bug is present: a `config.json` that is not JSON passed over for the defaults, and `config.json`'s `epochs` not checked as a typed `--epochs` is |
 | `repo-checks.test.js` | The repo's tracked files, by crypto-price-fetchers' checks (`crypto-price-fetchers/lib/repo-checks`): every EVM address in EIP-55's form, every npm target named in `docs/npm-project-commands.md`, every test file and helper named here, in `docs/engineering.md` or in `CLAUDE.md`, and every link and path in a doc pointing at a file, folder or heading the repo keeps |
 | `dependencies.test.js` | crypto-price-fetchers installed from GitHub, following its main branch or its latest release, and `npm run github-project-deps` running its versions tool |
 
@@ -57,6 +58,7 @@ One test file runs the whole script; the others test one module each.
 - `helpers/stand-in-gecko-terminal.js` answers for a pool's hourly candles
   as GeckoTerminal does, as a fetch or served on a local port. Asked in USD,
   it gives one fixed price at every hour, as GeckoTerminal does for X1.
-- `helpers/run-script.js` runs the script against both stand-ins and reads
-  the files it wrote.
+- `helpers/run-script.js` runs the script against both stand-ins, in a
+  temp folder whose `config.json` the test writes, as settings or as text
+  that need not be JSON, and reads the files it wrote.
 - `helpers/known-bug.js` declares a test of a known bug (see `../CLAUDE.md`).

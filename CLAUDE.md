@@ -163,8 +163,11 @@ checked over the full history on 2026-11-10.
 
 ## Known bugs
 
-None is known. When one is found, it gets a test in
-`test/known-bugs.test.js`, declared with `knownBug`
+Two are known. A `config.json` that is not JSON is passed over, with a
+warning, and the run goes on with the defaults. And `config.json`'s
+`epochs`, the default of `--epochs`, is not checked as a typed `--epochs`
+is: 0 or -3 reads one epoch, and "two" every epoch. When one is found, it
+gets a test in `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
 same change, among the tests of the code it is about.

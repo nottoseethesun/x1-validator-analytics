@@ -57,9 +57,10 @@ function readJson(file) {
  *
  * @param {Object} run - The run
  * @param {string} run.rpcUrl - The stand-in X1 endpoint's url
- * @param {string} run.geckoTerminalUrl - The stand-in GeckoTerminal's url
+ * @param {string} [run.geckoTerminalUrl] - The stand-in GeckoTerminal's url, which the folder's config.json names
  * @param {string[]} [run.args=[]] - Arguments beyond --rpc-url, --vote-pubkey and --output
  * @param {Object} [run.config={}] - Settings for the folder's config.json beyond the stand-in GeckoTerminal's url
+ * @param {string} [run.configText] - The folder's config.json, written as given in place of the settings, for a file that is not JSON
  * @param {number} [run.timeoutMs=0] - How long the run may take before it is stopped, in milliseconds; 0 for no limit
  * @returns {Promise<{code: number, killed: boolean, stdout: string, stderr: string, rows: ?Array<Object>,
  *   analytics: ?Array<Object>, json: ?Object, analyticsJson: ?Array<Object>}>} How it ended, whether it was
@@ -70,6 +71,7 @@ export async function runScript({
   geckoTerminalUrl,
   args = [],
   config = {},
+  configText,
   timeoutMs = 0,
 }) {
   const dir = fs.mkdtempSync(
@@ -78,7 +80,8 @@ export async function runScript({
   try {
     fs.writeFileSync(
       path.join(dir, "config.json"),
-      JSON.stringify({ geckoTerminalApiUrl: geckoTerminalUrl, ...config }),
+      configText ??
+        JSON.stringify({ geckoTerminalApiUrl: geckoTerminalUrl, ...config }),
     );
     const output = path.join(dir, "rewards.csv");
     const argv = [

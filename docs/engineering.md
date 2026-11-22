@@ -172,7 +172,11 @@ deleted. The steps from a branch to `main` are LP Ranger's eight, in its
 
 ## Known Bugs
 
-None is known. A bug found gets a test in `test/known-bugs.test.js`,
-declared with `knownBug` (`test/helpers/known-bug.js`), so the test passes
+Two are known. A `config.json` that is not JSON is passed over, with a
+warning, and the run goes on with the defaults. And `config.json`'s
+`epochs`, the default of `--epochs`, is not checked as a typed `--epochs`
+is: 0 or -3 reads one epoch, and "two" every epoch. A bug found gets a test
+in `test/known-bugs.test.js`, declared with `knownBug`
+(`test/helpers/known-bug.js`), so the test passes
 while the bug is present. The bug's fix makes its test fail; the same change
 declares the test with `it`, among the tests of the code it is about.
