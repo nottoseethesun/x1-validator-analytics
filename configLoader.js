@@ -19,7 +19,8 @@
  * with the USD stablecoin at usdStablecoinAddress; the defaults are XDEX's
  * WXNT / USDC.X pool and its two mints. requestTimeoutSeconds is how long a
  * request to the X1 endpoint may take to answer in full before it counts
- * as failed. epochs, null for every epoch, and the other settings the
+ * as failed: a whole number of seconds up to 2147483, the longest time
+ * limit Node's timers keep. epochs, null for every epoch, and the other settings the
  * command line names are the defaults of its options.
  */
 
@@ -56,7 +57,7 @@ export const SETTINGS_SCHEMA = Object.freeze({
   additionalProperties: false,
   properties: {
     rpcUrl: KINDS.url,
-    requestTimeoutSeconds: KINDS.above0,
+    requestTimeoutSeconds: KINDS.timeLimitSeconds,
     liquidityPoolAddress: PUBLIC_KEY,
     geckoTerminalApiUrl: KINDS.url,
     geckoTerminalNetwork: KINDS.text,

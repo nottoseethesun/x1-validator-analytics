@@ -200,7 +200,7 @@ function parseArguments(config, argv = process.argv) {
  * limit of its own: crypto-price-fetchers' `fetchWithinTimeLimit`, which
  * names the endpoint when the time runs out.
  *
- * @param {number} limitSeconds - How long a request may take, in seconds: config.json's requestTimeoutSeconds, a number above 0, as its schema holds it
+ * @param {number} limitSeconds - How long a request may take, in seconds: config.json's requestTimeoutSeconds, a whole number from 1 to 2147483, as its schema holds it
  * @returns {function(string, Object=): Promise<Response>} The fetch
  */
 function fetchWithTimeLimit(limitSeconds) {

@@ -54,8 +54,9 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 
 1. The settings come from `config.json` and the command line: the X1
    endpoint, how long a request to it may take to answer in full before it
-   counts as failed (`requestTimeoutSeconds`, 30 unless set, through
-   crypto-price-fetchers' `fetchWithinTimeLimit`), the vote
+   counts as failed (`requestTimeoutSeconds`, 30 unless set, a whole
+   number of seconds up to 2147483, the longest time limit Node's timers
+   keep, through crypto-price-fetchers' `fetchWithinTimeLimit`), the vote
    account, the pool prices come from, the output file, and how many epochs
    to read. `config.json` is checked against its JSON Schema before the
    script takes a setting, and each option's parser is made from the kind

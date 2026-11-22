@@ -74,12 +74,26 @@ describe("loadConfig", () => {
     assert.throws(() => loadConfig(file), {
       message: [
         "config.json → outputfile is not a setting this tool reads",
-        'config.json → requestTimeoutSeconds must be a number above 0; it is "30"',
+        'config.json → requestTimeoutSeconds must be a whole number of seconds from 1 to 2147483, the longest Node\'s timers keep; it is "30"',
         'config.json → geckoTerminalApiUrl must be an http or https url; it is "api.geckoterminal.com"',
         'config.json → xntTokenAddress must be a public key, 32 bytes written in base58; it is "0x2b591e99afE9f32eAA6214f7B7629768c40Eeb39"',
         'config.json → apiKeys must be a list of the services whose keys the programs send, each once; it is ["moralis","moralis"]',
       ].join("\n"),
     });
+  });
+});
+
+describe("loadConfig's time limit", () => {
+  it("refuses a time limit Node's timers cannot keep: a fraction of a second, which Node refuses as a timer's delay, or more than 2147483 seconds, which ends every request at once", () => {
+    for (const requestTimeoutSeconds of [2.01, 3000000]) {
+      const file = settingsFile(`${requestTimeoutSeconds}.json`, {
+        requestTimeoutSeconds,
+      });
+      assert.throws(() => loadConfig(file), {
+        message:
+          /requestTimeoutSeconds must be a whole number of seconds from 1 to 2147483/,
+      });
+    }
   });
 });
 
