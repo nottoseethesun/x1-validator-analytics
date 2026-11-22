@@ -23,7 +23,11 @@
  *   finds each time's price (`crypto-price-fetchers/dex-prices/geckoterminal`).
  *   It asks a thousand hours at a time, newest first, back from the latest
  *   time to a day before the earliest, or to the pool's first candle, as
- *   far back as GeckoTerminal's public api serves: the last 180 days. It
+ *   far back as GeckoTerminal's public api serves: it answers a request
+ *   only when its before-time is within the last 180 days, so the client
+ *   asks its last page a day inside that edge, and that page reaches a
+ *   thousand hourly candles further back, to about 220 days ago, more
+ *   where hours went without a trade. It
  *   keeps within its budget of requests, and sends a request GeckoTerminal
  *   refuses as too many (429) again after its waits.
  */

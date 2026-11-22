@@ -269,6 +269,23 @@ describe("priceTimes", () => {
     assert.deepEqual(found.prices, [0.28, null]);
   });
 
+  it("prices a time up to about 220 days before the clock, from the page asked at the edge of the public api's 180 days, and none older", async () => {
+    const DAY = 24 * HOUR;
+    const nowSeconds = T0 + 400 * DAY;
+    const gecko = standInGeckoTerminal({
+      candles: candlesFrom(400 * 24),
+      publicSince: nowSeconds - 180 * DAY,
+    });
+
+    const found = await priceTimes(
+      [nowSeconds - 225 * DAY, nowSeconds - 200 * DAY],
+      sourceFor(gecko, { now: () => nowSeconds * 1000 }).source,
+    );
+
+    assert.deepEqual(found.prices, [null, 0.2 + (200 * 24) / 100000]);
+    assert.equal(gecko.asked.length, 1);
+  });
+
   it("asks nothing when there are no times", async () => {
     const gecko = standInGeckoTerminal({ candles: candlesFrom(3) });
     assert.deepEqual(await priceTimes([], sourceFor(gecko).source), {

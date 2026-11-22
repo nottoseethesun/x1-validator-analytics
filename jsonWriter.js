@@ -44,7 +44,7 @@ export function writeJsonExport(
       percentageExpectedWithRewards: summary.percentageExpectedWithRewards,
     },
     summary: {
-      dateRangeApprox: summary.dateRange,
+      dateRange: summary.dateRange,
       daysCovered: summary.days,
       totalXNTEarned: summary.totalXnt,
       averageDailyXNT: summary.averageDailyXnt,

@@ -28,8 +28,10 @@ of XDEX, a decentralized exchange on X1: WXNT, wrapped XNT, against
 USDC.X, a USD stablecoin taken at $1. The price is the close of the last
 candle that opened at or before the reward, less than a day before it.
 GeckoTerminal's X1 candles start on 2026-10-01, and its public api serves
-the last 180 days, so a reward before either has empty price and value
-cells, with a warning. Amounts keep all nine of XNT's decimal places.
+candles back to about 220 days ago: it answers a request only when its
+before-time is within the last 180 days, and a page reaches a thousand
+hourly candles back from that. A reward before either has empty price and
+value cells, with a warning. Amounts keep all nine of XNT's decimal places.
 
 ## Table of Contents
 

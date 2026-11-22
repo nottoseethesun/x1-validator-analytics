@@ -14,7 +14,7 @@ import os from "node:os";
 import path from "node:path";
 import { writeAnalyticsCsv, writeMainCsv } from "../csvWriter.js";
 import { rewardRows } from "../rewards.js";
-import { summarizeRewards } from "../summary.js";
+import { analyticsMetrics, summarizeRewards } from "../summary.js";
 
 /** One reward, and the counts of a run that queried its epoch alone. */
 const REWARDS = [
@@ -58,5 +58,22 @@ describe("the CSV files", () => {
       assert.ok(text.endsWith("\n"), `${file} ends with no newline`);
       assert.ok(!text.endsWith("\n\n"), `${file} ends with an empty row`);
     }
+  });
+});
+
+describe("the reward dates' labels", () => {
+  it("name the reward dates, the block times the chain gives, with no approx", () => {
+    const rows = rewardRows(REWARDS, [0.144013]);
+    const main = path.join(folder, "labels.csv");
+    writeMainCsv(rows, main);
+    const header = fs.readFileSync(main, "utf8").split("\n")[0];
+    assert.equal(
+      header,
+      "\uFEFFEpoch,Reward Date (UTC),XNT Amount,Cumulative XNT,XNT Price (USD),Value (USD),Cumulative USD",
+    );
+    assert.equal(
+      analyticsMetrics(summarizeRewards(rows, COUNTS))[0][0],
+      "Final Date Range",
+    );
   });
 });
