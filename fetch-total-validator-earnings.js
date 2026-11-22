@@ -465,7 +465,13 @@ async function fetchRewardsForEpochs(
   const estimatedTotal =
     maxEpochs !== null && maxEpochs !== undefined ? maxEpochs : currentEpoch;
 
-  console.log(`Processing epochs from ${currentEpoch - 1} back to epoch 0...`);
+  const lastEpoch =
+    maxEpochs !== null && maxEpochs !== undefined
+      ? Math.max(0, currentEpoch - maxEpochs)
+      : 0;
+  console.log(
+    `Processing epochs from ${currentEpoch - 1} back to epoch ${lastEpoch}...`,
+  );
 
   const updateInterval = 5;
 

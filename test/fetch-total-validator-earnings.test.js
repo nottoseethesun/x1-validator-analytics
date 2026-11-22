@@ -128,6 +128,13 @@ describe("fetch-total-validator-earnings.js, three recent epochs, all priced", (
     if (standIns !== undefined) await standIns.close();
   });
 
+  it("says it processes the epochs it reads: 499 back to 497 of a chain at epoch 500", () => {
+    assert.match(
+      run.stdout,
+      /Processing epochs from 499 back to epoch 497\.\.\.\n/,
+    );
+  });
+
   it("exits with code 0 and writes one row per epoch, oldest first", () => {
     assert.equal(run.code, 0, run.stderr);
     assert.deepEqual(
@@ -282,6 +289,13 @@ describe("fetch-total-validator-earnings.js, full history, with prices from midw
 
   after(async () => {
     if (standIns !== undefined) await standIns.close();
+  });
+
+  it("says it processes every epoch, 29 back to 0", () => {
+    assert.match(
+      run.stdout,
+      /Processing epochs from 29 back to epoch 0\.\.\.\n/,
+    );
   });
 
   it("exits with code 0 and writes a row for each epoch from 16 to 29", () => {
