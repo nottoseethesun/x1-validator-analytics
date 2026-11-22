@@ -80,10 +80,16 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
    json export names that first reward's epoch.
 3. It prices each reward at its own time (see [Prices](#prices)).
 4. It writes one row per reward, oldest first, with the running totals of
-   XNT and USD, to the file `--output` or `config.json` names; the
-   analytics summary to `xnt_rewards_analytics.csv`, in the folder it runs
-   in; and, with `--json`, both as JSON, to `xnt_rewards.json` and
-   `xnt_rewards_analytics.json`, in that folder too. Then it prints the
+   XNT and USD, to the file `--output` or `config.json` names, by default
+   `output/csv/xnt_rewards_with_prices.csv`; the analytics summary to
+   `output/csv/xnt_rewards_analytics.csv`, in the folder it runs in; and,
+   with `--json`, both as JSON, to `output/json/xnt_rewards.json` and
+   `output/json/xnt_rewards_analytics.json`, in that folder too. The
+   folder it runs in is the repo's top, which keeps `output/csv/` and
+   `output/json/` by their `.gitkeep`, the empty file in each, and git
+   ignores everything else in them, since the reports hold the owner's
+   data and the repo is public. Before it asks the chain anything, the
+   run checks that the folder of each file it will write exists. Then it prints the
    summary.
 
 A run sets its exit code to 1 as it starts, and to 0 once the files are

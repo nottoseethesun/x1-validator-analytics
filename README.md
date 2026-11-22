@@ -260,11 +260,14 @@ account's public key.
 ### fetch-total-validator-earnings.js
 
 `bin/fetch-total-validator-earnings.js` needs only the vote account's
-public key. It writes the rewards to `xnt_rewards_with_prices.csv`, unless
-`--output` or `config.json` names another file, and the summary to
-`xnt_rewards_analytics.csv`, always by that name, in the folder it runs
-in. Every reward of a vote account, from its first epoch to the last one
-completed:
+public key. It writes the rewards to
+`output/csv/xnt_rewards_with_prices.csv`, unless `--output` or
+`config.json` names another file, and the summary to
+`output/csv/xnt_rewards_analytics.csv`, always by that name, in the folder
+it runs in, the repo's top. The files hold your own data, and the repo is
+public, so git keeps nothing in `output/` but its folders, and a run in a
+folder without them stops before it asks the chain anything. Every reward
+of a vote account, from its first epoch to the last one completed:
 
 ```bash
 node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account>
@@ -280,8 +283,9 @@ The last 20 epochs only, with each step logged:
 node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
 ```
 
-Every reward, with JSON files too, in the folder it runs in: all of it in
-`xnt_rewards.json`, and the summary in `xnt_rewards_analytics.json`:
+Every reward, with JSON files too: all of it in
+`output/json/xnt_rewards.json`, and the summary in
+`output/json/xnt_rewards_analytics.json`:
 
 ```bash
 node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
@@ -334,7 +338,7 @@ issues it, as on Solana.
 | `usdStablecoinAddress` | the mint of the USD stablecoin on the pool's other side | USDC.X, `B69chRzqzDCmdB5WYB8NRu5Yv5ZA95ABiZcdzCgGm9Tq` | — |
 | `geckoTerminalApiUrl` | GeckoTerminal's api address | `https://api.geckoterminal.com/api/v2` | — |
 | `geckoTerminalNetwork` | GeckoTerminal's name for X1 | `x1-network` | — |
-| `outputFile` | the main CSV file to write | `xnt_rewards_with_prices.csv` | `--output` |
+| `outputFile` | the main CSV file to write, a path from the folder the script runs in | `output/csv/xnt_rewards_with_prices.csv` | `--output` |
 | `verbose` | whether to log each step | `false` | `--verbose`, or `--no-verbose` to turn it off |
 | `epochs` | how many epochs to read, back from the last one completed; every epoch when `null` | `null` | `--epochs` |
 | `apiKeys` | the services whose keys the key store keeps | none | — |

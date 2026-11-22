@@ -62,9 +62,14 @@ settings; the keys and the reports stay on the owner's computer.
 | File | In git | What it holds |
 | ---- | ------ | ------------- |
 | `config.json` | yes | The script's settings, over the defaults in `configLoader.js`, and the services whose keys the programs send, under `apiKeys`: none today. Checked against its JSON Schema, `SETTINGS_SCHEMA` in `configLoader.js`, before the script takes a setting. |
+| `config-example.json` | yes | What `config.json` holds, as the example of its settings that every `config.json` has beside it. |
 | `api-keys.json` | no | Api keys, encrypted with the owner's password, should a service that takes one be added. |
-| `xnt_rewards_with_prices.csv`, `xnt_rewards_analytics.csv` | no | The reports, unless `--output` names another file. |
-| `xnt_rewards.json`, `xnt_rewards_analytics.json` | no | The reports as JSON, with `--json`. |
+| `output/csv/` | `.gitkeep` alone | The reports, `xnt_rewards_with_prices.csv`, unless `--output` names another file, and `xnt_rewards_analytics.csv`. |
+| `output/json/` | `.gitkeep` alone | The reports as JSON, `xnt_rewards.json` and `xnt_rewards_analytics.json`, with `--json`. |
+
+A folder git keeps by its `.gitkeep` alone holds the owner's own data:
+git ignores everything in it but that empty file, which keeps the folder
+in the repo, and the format check and the secret scan pass over it.
 
 ---
 

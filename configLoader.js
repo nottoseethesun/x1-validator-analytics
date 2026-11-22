@@ -42,7 +42,7 @@ export const DEFAULTS = Object.freeze({
   geckoTerminalNetwork: "x1-network",
   xntTokenAddress: "So11111111111111111111111111111111111111112",
   usdStablecoinAddress: "B69chRzqzDCmdB5WYB8NRu5Yv5ZA95ABiZcdzCgGm9Tq",
-  outputFile: "xnt_rewards_with_prices.csv",
+  outputFile: "output/csv/xnt_rewards_with_prices.csv",
   verbose: false,
   epochs: null,
 });

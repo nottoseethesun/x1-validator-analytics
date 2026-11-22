@@ -63,6 +63,7 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
         path.join(dir, "config.json"),
         JSON.stringify({ geckoTerminalApiUrl: gecko.url }),
       );
+      fs.mkdirSync(path.join(dir, "output", "csv"), { recursive: true });
       const code = await new Promise((resolve, reject) => {
         const child = spawn(
           process.execPath,
@@ -75,7 +76,9 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
         child.on("exit", (exitCode) => resolve(exitCode));
       });
       assert.equal(
-        fs.existsSync(path.join(dir, "xnt_rewards_with_prices.csv")),
+        fs.existsSync(
+          path.join(dir, "output", "csv", "xnt_rewards_with_prices.csv"),
+        ),
         false,
       );
       assert.equal(code, 1);
@@ -93,6 +96,37 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
     });
     assert.equal(run.code, 1);
     assert.match(run.stderr, /--output/);
+    assert.equal(x1.chain.blockTimeAsks, asksBefore);
+  });
+
+  it("refuses a run in a folder without output/csv/, where it writes the summary, before it asks the chain for any reward's time", async () => {
+    const asksBefore = x1.chain.blockTimeAsks;
+    const run = await runScript({
+      rpcUrl: x1.url,
+      geckoTerminalUrl: gecko.url,
+      folders: ["output/json"],
+    });
+    assert.equal(run.code, 1);
+    assert.match(
+      run.stderr,
+      /writes the summary to output\/csv\/xnt_rewards_analytics\.csv, in the folder it runs in, and its folder, .*, does not exist/,
+    );
+    assert.equal(x1.chain.blockTimeAsks, asksBefore);
+  });
+
+  it("refuses a run with --json in a folder without output/json/ before it asks the chain for any reward's time", async () => {
+    const asksBefore = x1.chain.blockTimeAsks;
+    const run = await runScript({
+      rpcUrl: x1.url,
+      geckoTerminalUrl: gecko.url,
+      args: ["--json"],
+      folders: ["output/csv"],
+    });
+    assert.equal(run.code, 1);
+    assert.match(
+      run.stderr,
+      /writes --json's files to output\/json\/xnt_rewards\.json, in the folder it runs in, and its folder, .*, does not exist/,
+    );
     assert.equal(x1.chain.blockTimeAsks, asksBefore);
   });
 

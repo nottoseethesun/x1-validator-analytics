@@ -2,11 +2,19 @@
  * @fileoverview
  * Module for exporting full data as JSON file when --json flag is set.
  * Also exports a separate analytics JSON mirroring xnt_rewards_analytics.csv.
- * A reward with no XNT price has a price and value of null.
+ * A reward with no XNT price has a price and value of null. Both files go
+ * in `output/json/` of the folder the script runs in, which git ignores but
+ * for its `.gitkeep`.
  */
 
 import fs from "fs";
 import { analyticsMetrics } from "./summary.js";
+
+/** The full data JSON, a path from the folder the script runs in. */
+export const FULL_JSON = "output/json/xnt_rewards.json";
+
+/** The analytics JSON, a path from the folder the script runs in. */
+export const ANALYTICS_JSON = "output/json/xnt_rewards_analytics.json";
 
 /**
  * Writes full data as JSON files if exportJson is true.
@@ -69,9 +77,8 @@ export function writeJsonExport(
     })),
   };
 
-  const fullJsonPath = "xnt_rewards.json";
-  fs.writeFileSync(fullJsonPath, JSON.stringify(fullJsonData, null, 2) + "\n");
-  console.log(`Full JSON export written to: ${fullJsonPath}`);
+  fs.writeFileSync(FULL_JSON, JSON.stringify(fullJsonData, null, 2) + "\n");
+  console.log(`Full JSON export written to: ${FULL_JSON}`);
 
   // 2. Analytics-only JSON (xnt_rewards_analytics.json) - exact mirror of CSV
   const analyticsData = analyticsMetrics(summary).map(([Metric, Value]) => ({
@@ -79,10 +86,9 @@ export function writeJsonExport(
     Value,
   }));
 
-  const analyticsJsonPath = "xnt_rewards_analytics.json";
   fs.writeFileSync(
-    analyticsJsonPath,
+    ANALYTICS_JSON,
     JSON.stringify(analyticsData, null, 2) + "\n",
   );
-  console.log(`Analytics JSON export written to: ${analyticsJsonPath}`);
+  console.log(`Analytics JSON export written to: ${ANALYTICS_JSON}`);
 }
