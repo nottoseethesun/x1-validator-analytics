@@ -13,8 +13,8 @@ import { GECKO_TERMINAL_API_URL } from "crypto-price-fetchers/dex-prices/geckote
  * liquidityPoolAddress, which must pair XNT (wrapped, at xntTokenAddress)
  * with the USD stablecoin at usdStablecoinAddress; the defaults are XDEX's
  * WXNT / USDC.X pool and its two mints. requestTimeoutSeconds is how long a
- * request to the X1 endpoint may go without an answer before it counts as
- * failed.
+ * request to the X1 endpoint may take to answer in full before it counts
+ * as failed.
  *
  * @returns {Object} Configuration object with all defaults.
  */

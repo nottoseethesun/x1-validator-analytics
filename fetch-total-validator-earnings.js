@@ -16,8 +16,8 @@
  * - Uses X1-specific getInflationReward (epoch as plain u64).
  * - Per-epoch error handling: a failed query is skipped and counted, apart from an epoch the endpoint
  *   answers with no reward for the account, as it does for an epoch before the account began.
- * - Each request to the X1 endpoint gets an answer within requestTimeoutSeconds of config.json, 30
- *   unless set, or counts as failed.
+ * - Each request to the X1 endpoint gets its whole answer within requestTimeoutSeconds of
+ *   config.json, 30 unless set, or counts as failed.
  * - Amounts are exact: XNT has nine decimal places, and every amount and XNT total keeps all nine.
  * - Each reward's price is XNT's in the USD stablecoin of the pool at liquidityPoolAddress, from
  *   GeckoTerminal's hourly candles: the close of the last candle that opened at or before the
@@ -41,6 +41,7 @@ import { Connection, PublicKey } from "@solana/web3.js";
 import { Command, InvalidArgumentError } from "commander";
 import { endQuietlyWhenOutputCloses } from "crypto-price-fetchers/lib/closed-output";
 import { isHttpUrl } from "crypto-price-fetchers/lib/http-url";
+import { fetchWithinTimeLimit } from "crypto-price-fetchers/lib/time-limited-fetch";
 import moment from "moment";
 import { loadConfig } from "./configLoader.js";
 import { writeMainCsv, writeAnalyticsCsv } from "./csvWriter.js";
@@ -228,8 +229,10 @@ function parseArguments(config, argv = process.argv) {
 }
 
 /**
- * A fetch that gives up on a request that has no answer within the time
- * limit, for web3.js, which sends its requests with no limit of its own.
+ * A fetch that gives up on a request whose answer has not arrived in full
+ * within the time limit, for web3.js, which sends its requests with no
+ * limit of its own: crypto-price-fetchers' `fetchWithinTimeLimit`, which
+ * names the endpoint when the time runs out.
  *
  * @param {number} limitSeconds - How long a request may take, in seconds
  * @returns {function(string, Object=): Promise<Response>} The fetch
@@ -241,27 +244,16 @@ function fetchWithTimeLimit(limitSeconds) {
       `config.json's requestTimeoutSeconds must be a number of seconds above 0, not ${JSON.stringify(limitSeconds)}`,
     );
   }
-  return async (url, options = {}) => {
-    const limit = AbortSignal.timeout(limitSeconds * 1000);
-    const signal =
-      options.signal === undefined || options.signal === null
-        ? limit
-        : AbortSignal.any([options.signal, limit]);
-    try {
-      return await fetch(url, { ...options, signal });
-    } catch (error) {
-      if (error?.name !== "TimeoutError") throw error;
-      throw new Error(
-        `The X1 endpoint at ${url} gave no answer within ${limitSeconds} seconds`,
-        { cause: error },
-      );
-    }
-  };
+  return (url, options) =>
+    fetchWithinTimeLimit(url, options, {
+      timeoutMs: limitSeconds * 1000,
+      name: `The X1 endpoint at ${url}`,
+    });
 }
 
 /**
  * Creates and returns a Solana Connection object, whose requests each get
- * an answer within the time limit or fail.
+ * their whole answer within the time limit or fail.
  *
  * @param {string} rpcUrl - The RPC endpoint URL.
  * @param {number} requestTimeoutSeconds - How long a request may take, in seconds.

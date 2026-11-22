@@ -16,7 +16,8 @@
  * X1's 0.366 seconds per slot. It answers the five methods the script
  * calls, and gives a json-rpc error for any other; it gives the account's
  * credits for the last five epochs, as `getVoteAccounts` does. A test may
- * also have it answer nothing at all, as a stalled endpoint does.
+ * also have it answer nothing at all, as a stalled endpoint does, or stop
+ * in the middle of its answer, as an endpoint whose connection hangs does.
  */
 
 import http from "node:http";
@@ -169,6 +170,7 @@ function answer(method, params, chain) {
  * @param {number} [options.noRewardThrough=-1] - The last of the early epochs answered with no reward for the account
  * @param {number[]} [options.noRewardEpochs=[]] - Other epochs answered with no reward for the account
  * @param {boolean} [options.stalled=false] - Whether it takes each request and answers none
+ * @param {boolean} [options.stopsInBody=false] - Whether it answers each request with its headers and the start of a body, and sends no more
  * @returns {Promise<{url: string, chain: Object, close: function(): Promise<void>}>} The endpoint's url,
  *   the chain's settings, as `rewardSeconds` takes them, and a way to stop it
  */
@@ -182,6 +184,7 @@ export function startStandInX1({
   noRewardThrough = -1,
   noRewardEpochs = [],
   stalled = false,
+  stopsInBody = false,
 }) {
   const chain = {
     votePubkey,
@@ -195,6 +198,11 @@ export function startStandInX1({
   };
   const server = http.createServer((request, response) => {
     if (stalled) return;
+    if (stopsInBody) {
+      response.writeHead(200, { "content-type": "application/json" });
+      response.write('{"jsonrpc":"2.0",');
+      return;
+    }
     let body = "";
     request.on("data", (chunk) => {
       body += chunk;
