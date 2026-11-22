@@ -533,4 +533,27 @@ describe("fetch-total-validator-earnings.js, against an endpoint that stops in t
       /^Error: The X1 endpoint at http:\/\/127\.0\.0\.1:\d+ gave no answer within 1 seconds$/m,
     );
   });
+
+  it("stops with exit code 1, naming the epoch, when the chain gives no block time for a reward", async () => {
+    const x1 = await startStandInX1({
+      votePubkey: VOTE_PUBKEY,
+      rewardLamports: 1234567891,
+      nowSeconds: NOW_SECONDS,
+      failBlockTimes: true,
+    });
+    const server = await serveStandInGeckoTerminal(
+      standInGeckoTerminal({ candles: [] }),
+    );
+    try {
+      const run = await runScript({
+        rpcUrl: x1.url,
+        geckoTerminalUrl: server.url,
+        args: ["--epochs", "1"],
+      });
+      assert.equal(run.code, 1);
+      assert.match(run.stderr, /epoch 499/);
+    } finally {
+      await Promise.all([x1.close(), server.close()]);
+    }
+  });
 });

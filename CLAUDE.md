@@ -175,11 +175,12 @@ npm ci
 npm run check
 ```
 
-When the chain gives no block time for a reward's slot, the script falls
-back to an estimate of the reward's date, which assumes 24-hour epochs
-where X1's run about 22 hours. The live chain gives a block time for every
-one of the validator's rewards, so the estimate never runs. That was
-checked over the full history on 2026-11-10.
+A reward's date is the block time of its slot, which the chain gives. A
+failed request for it is asked again twice, 2 seconds apart; when the
+chain still gives no block time, or the reward names no slot, the run
+stops with exit code 1, naming the epoch, so no row carries an estimated
+date or price. The live chain gave a block time for every one of the
+validator's rewards over the full history, checked on 2026-11-10.
 
 ## Known bugs
 
