@@ -534,12 +534,37 @@ describe("fetch-total-validator-earnings.js, against an endpoint that stops in t
     );
   });
 
-  it("stops with exit code 1, naming the epoch, when the chain gives no block time for a reward", async () => {
+  it("asks a failed block time again twice, 2 seconds apart, and goes on when the third request answers", async () => {
     const x1 = await startStandInX1({
       votePubkey: VOTE_PUBKEY,
       rewardLamports: 1234567891,
       nowSeconds: NOW_SECONDS,
-      failBlockTimes: true,
+      failBlockTimes: 2,
+    });
+    const server = await serveStandInGeckoTerminal(
+      standInGeckoTerminal({ candles: [] }),
+    );
+    try {
+      const started = Date.now();
+      const run = await runScript({
+        rpcUrl: x1.url,
+        geckoTerminalUrl: server.url,
+        args: ["--epochs", "1"],
+      });
+      assert.equal(run.code, 0, run.stderr);
+      assert.equal(x1.chain.blockTimeAsks, 3);
+      assert.ok(Date.now() - started >= 4000, "two waits of 2 seconds");
+    } finally {
+      await Promise.all([x1.close(), server.close()]);
+    }
+  });
+
+  it("stops with exit code 1, naming the epoch, when the chain gives no block time for a reward in three requests", async () => {
+    const x1 = await startStandInX1({
+      votePubkey: VOTE_PUBKEY,
+      rewardLamports: 1234567891,
+      nowSeconds: NOW_SECONDS,
+      failBlockTimes: 3,
     });
     const server = await serveStandInGeckoTerminal(
       standInGeckoTerminal({ candles: [] }),
@@ -552,6 +577,7 @@ describe("fetch-total-validator-earnings.js, against an endpoint that stops in t
       });
       assert.equal(run.code, 1);
       assert.match(run.stderr, /epoch 499/);
+      assert.equal(x1.chain.blockTimeAsks, 3);
     } finally {
       await Promise.all([x1.close(), server.close()]);
     }

@@ -108,8 +108,8 @@ checked as commander parses it, so a mistake names its option before
 anything is asked: its parser is made, with crypto-price-fetchers'
 `kindParser`, from the kind of value `config.json`'s schema gives the same
 setting (Settings, below), a public key in base58 (`public-key.js`), an
-http or https url, or a whole number above 0, so a typed value and a value
-in the file meet one rule. Each entry point calls
+http or https url, a whole number above 0, or text that is not empty, so a
+typed value and a value in the file meet one rule. Each entry point calls
 crypto-price-fetchers' `endQuietlyWhenOutputCloses`
 (`crypto-price-fetchers/lib/closed-output`) before it starts, so a command
 line whose output is piped into a program that stops reading, such as

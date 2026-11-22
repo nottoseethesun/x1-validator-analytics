@@ -146,7 +146,8 @@ function answer(method, params, chain) {
     case "getInflationReward":
       return inflationReward(params, chain);
     case "getBlockTime":
-      if (chain.failBlockTimes) {
+      chain.blockTimeAsks += 1;
+      if (chain.blockTimeAsks <= chain.failBlockTimes) {
         return {
           error: {
             code: -32009,
@@ -177,11 +178,12 @@ function answer(method, params, chain) {
  * @param {number[]} [options.failEpochs=[]] - Other epochs whose reward query fails
  * @param {number} [options.noRewardThrough=-1] - The last of the early epochs answered with no reward for the account
  * @param {number[]} [options.noRewardEpochs=[]] - Other epochs answered with no reward for the account
- * @param {boolean} [options.failBlockTimes=false] - Whether it answers every getBlockTime with an error
+ * @param {number} [options.failBlockTimes=0] - How many getBlockTime requests, the first ones, it answers with an error: `Infinity` for every one
  * @param {boolean} [options.stalled=false] - Whether it takes each request and answers none
  * @param {boolean} [options.stopsInBody=false] - Whether it answers each request with its headers and the start of a body, and sends no more
  * @returns {Promise<{url: string, chain: Object, close: function(): Promise<void>}>} The endpoint's url,
- *   the chain's settings, as `rewardSeconds` takes them, and a way to stop it
+ *   the chain's settings, as `rewardSeconds` takes them, with `blockTimeAsks`, the getBlockTime requests it
+ *   has taken, and a way to stop it
  */
 export function startStandInX1({
   votePubkey,
@@ -192,7 +194,7 @@ export function startStandInX1({
   failEpochs = [],
   noRewardThrough = -1,
   noRewardEpochs = [],
-  failBlockTimes = false,
+  failBlockTimes = 0,
   stalled = false,
   stopsInBody = false,
 }) {
@@ -206,6 +208,7 @@ export function startStandInX1({
     noRewardThrough,
     noRewardEpochs,
     failBlockTimes,
+    blockTimeAsks: 0,
   };
   const server = http.createServer((request, response) => {
     if (stalled) return;
