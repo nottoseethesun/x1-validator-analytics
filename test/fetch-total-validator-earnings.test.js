@@ -327,6 +327,11 @@ describe("fetch-total-validator-earnings.js, full history, with prices from midw
   });
 
   it("writes the same rewards to the json export, with null where there is no price", () => {
+    assert.equal(
+      run.json.summary.dateRange,
+      metric(run.analytics, "Final Date Range"),
+    );
+    assert.equal("dateRangeApprox" in run.json.summary, false);
     assert.equal(run.json.rewards.length, 14);
     assert.deepEqual(run.json.rewards[0], {
       epoch: 16,

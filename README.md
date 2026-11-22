@@ -76,8 +76,9 @@ The two CSV files a run writes, opened in Google Sheets, Google's
 spreadsheet app: the rewards, each with its price and the running totals,
 and the summary. The pictures come from an older version, which priced
 every reward at 1; the script now leaves a reward before 2026-10-01
-unpriced and prices the rest from the pool, as [Prices](#prices) says,
-and its summary's labels have changed.
+unpriced and prices the rest from the pool, as [Prices](#prices) says.
+Its summary's labels have changed, and the rewards' date column, shown
+as `Reward Date (UTC, approx)`, is now `Reward Date (UTC)`.
 
 ![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png)
 ![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png)
