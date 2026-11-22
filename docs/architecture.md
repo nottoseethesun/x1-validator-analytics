@@ -39,7 +39,7 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 
 | Module | What it does |
 | ------ | ------------ |
-| `fetch-total-validator-earnings.js` | The command line, declared with commander, the package that parses a command line and writes its help: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. `--help` lists its options, with examples and its exit codes. |
+| `bin/fetch-total-validator-earnings.js` | The command line, declared with commander, the package that parses a command line and writes its help: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. `--help` lists its options, with examples and its exit codes. |
 | `configLoader.js` | The settings: `config.json`, checked against its JSON Schema, over the defaults. |
 | `public-key.js` | A public key, as X1 writes an address: 32 bytes in base58, the kind of value the options and settings that hold one share. |
 | `xnt-price.js` | XNT's USD price at a time, from GeckoTerminal, through crypto-price-fetchers' GeckoTerminal client. |
@@ -140,7 +140,7 @@ store, set up as in pulsechain-analytics and pulsechain-validator-analytics,
 the owner's other projects that install it: the top `config.json` lists the
 services whose keys the programs send, under `apiKeys`, empty today; this
 repo's `npm run api-keys` runs the store's key manager, and
-`unlock-api-keys.sh`, a script in the repo's top folder and a copy of
+`bin/unlock-api-keys.sh`, a script in the repo's `bin/` and a copy of
 crypto-price-fetchers', keeps the password for a terminal. A key would be
 kept in `api-keys.json`, which git, the version-control program that
 keeps the repo's history, ignores, encrypted with the owner's password.

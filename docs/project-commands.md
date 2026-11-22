@@ -137,14 +137,14 @@ npm runs this command itself, after another one.
 
 ## Commands Run Without npm
 
-These command lines run with `node`, or, for the password script,
-`source`, at a terminal, in the repo's top folder.
-[The README's Usage](../README.md#usage) shows the script at work.
+These command lines, the programs in `bin/`, run with `node`, or, for
+the password script, `source`, at a terminal, in the repo's top folder.
+[The README's Run](../README.md#run) shows them at work.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
-| `node fetch-total-validator-earnings.js` | the flags of `start` above | The script, as `npm start` runs it. `--help` describes each flag, with examples and the exit codes. | `node fetch-total-validator-earnings.js --vote-pubkey <vote account> --epochs 20` |
-| `source ./unlock-api-keys.sh` | — | Asks for the key store's password, showing nothing typed, checks that it opens every key saved, and keeps it in `API_KEYS_PASSWORD` for the terminal, so the programs open their keys without asking. Runs in bash or zsh. | `source ./unlock-api-keys.sh` |
+| `node bin/fetch-total-validator-earnings.js` | the flags of `start` above | The script, as `npm start` runs it. `--help` describes each flag, with examples and the exit codes. | `node bin/fetch-total-validator-earnings.js --vote-pubkey <vote account> --epochs 20` |
+| `source ./bin/unlock-api-keys.sh` | — | Asks for the key store's password, showing nothing typed, checks that it opens every key saved, and keeps it in `API_KEYS_PASSWORD` for the terminal, so the programs open their keys without asking. Runs in bash or zsh. | `source ./bin/unlock-api-keys.sh` |
 
 ---
 

@@ -37,6 +37,8 @@ describe("crypto-price-fetchers", () => {
       import.meta.resolve("crypto-price-fetchers/dex-prices/geckoterminal"),
     );
     const packageTop = path.join(path.dirname(client), "..");
-    assert.ok(fs.existsSync(path.join(packageTop, "github-project-deps.js")));
+    assert.ok(
+      fs.existsSync(path.join(packageTop, "bin", "github-project-deps.js")),
+    );
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Runs fetch-total-validator-earnings.js, the real script, in a child
+ * Runs bin/fetch-total-validator-earnings.js, the real script, in a child
  * process against stand-ins, and reads what it wrote.
  * @module test/helpers/run-script
  *
@@ -21,7 +21,7 @@ const execFileAsync = promisify(execFile);
 
 /** The script under test. */
 const SCRIPT = fileURLToPath(
-  new URL("../../fetch-total-validator-earnings.js", import.meta.url),
+  new URL("../../bin/fetch-total-validator-earnings.js", import.meta.url),
 );
 
 /** The vote account the tests ask about. */

@@ -1,5 +1,5 @@
 /**
- * Tests of how a run of fetch-total-validator-earnings.js, the real
+ * Tests of how a run of bin/fetch-total-validator-earnings.js, the real
  * script, run in a child process against stand-ins, ends and shows its
  * progress: a run whose output's reader stops reading, an --output whose
  * folder does not exist, and the progress bar's count.
@@ -22,7 +22,7 @@ import { runScript, VOTE_PUBKEY } from "./helpers/run-script.js";
 
 /** The script under test. */
 const SCRIPT = fileURLToPath(
-  new URL("../fetch-total-validator-earnings.js", import.meta.url),
+  new URL("../bin/fetch-total-validator-earnings.js", import.meta.url),
 );
 
 /** The stand-in chain's time: 12:00 UTC on 2026-11-10. */
