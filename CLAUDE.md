@@ -183,7 +183,12 @@ checked over the full history on 2026-11-10.
 
 ## Known bugs
 
-None is known. When one is found, it gets a test in
+Three are known. When the chain gives no block time for a reward, the
+script estimates the reward's date, 24 hours an epoch back from now, says
+so only with `--verbose`, and ends with exit code 0, so the date and its
+price are wrong. `--output` has no parser, so an empty name passes and the
+run fails after asking the chain. In a folder whose `config.json` is
+refused, `--help` prints only the settings' problems and exits with 1. When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
