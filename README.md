@@ -10,18 +10,31 @@
 
 A script that reads what an X1 validator has earned: every inflation
 reward its vote account received, each priced in USD at its own time,
-written to a CSV file with running totals, and a summary beside it. X1 is
-a blockchain built from Solana's code, and XNT its coin.
+written to a CSV file with running totals, and a summary to a second
+file. X1 is a blockchain built from Solana's code, and XNT its coin.
 
 The script, `fetch-total-validator-earnings.js`, runs on Node, the
 program that runs JavaScript outside a browser. It asks an X1 rpc
-endpoint for each epoch's reward and the time of the block that paid it,
-and GeckoTerminal, a service that lists the pools of decentralized
-exchanges with their prices and candles, for XNT's price at that hour.
+endpoint, the json-rpc api of an X1 node, for each epoch's reward and the
+time of the block that paid it, and GeckoTerminal, a service that lists
+the pools of decentralized exchanges with their prices and candles, for
+XNT's price at that hour. The repo's owner, nottoseethesun on GitHub,
+uses it for his own validator's books.
+
+### Prices
+
+Each reward is priced from GeckoTerminal's hourly candles for one pool
+of XDEX, a decentralized exchange on X1: WXNT, wrapped XNT, against
+USDC.X, a USD stablecoin taken at $1. The price is the close of the last
+candle that opened at or before the reward, less than a day before it.
+GeckoTerminal's X1 candles start on 2026-10-01, and its public api serves
+the last 180 days, so a reward before either has empty price and value
+cells, with a warning. Amounts keep all nine of XNT's decimal places.
 
 ## Table of Contents
 
 - [Overview](#overview)
+  - [Prices](#prices)
 - [Disclaimer](#disclaimer)
 - [Screenshot](#screenshot)
 - [Prerequisites](#prerequisites)
@@ -33,7 +46,6 @@ exchanges with their prices and candles, for XNT's price at that hour.
 - [Uninstall](#uninstall)
 - [Usage](#usage)
   - [A Validator's Rewards](#a-validators-rewards)
-  - [Prices](#prices)
 - [Configure](#configure)
 - [Lint & Test](#lint--test)
 - [Private Key Security](#private-key-security)
@@ -60,7 +72,10 @@ before you rely on them, for your taxes or for anything else.
 
 The two CSV files a run writes, opened in Google Sheets, Google's
 spreadsheet app: the rewards, each with its price and the running totals,
-and the summary.
+and the summary. The pictures come from an older version, which priced
+every reward at 1; the script now leaves a reward before 2026-10-01
+unpriced and prices the rest from the pool, as [Prices](#prices) says,
+and its summary's labels have changed.
 
 ![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png)
 ![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png)
@@ -91,7 +106,7 @@ cd x1-validator-analytics
 npm ci
 ```
 
-It installs everything the script needs, among it, from GitHub,
+It installs everything the script needs, including, from GitHub,
 crypto-price-fetchers, the owner's repo of code his projects share: its
 key store, and its GeckoTerminal client, which prices XNT.
 
@@ -154,11 +169,9 @@ across.
 
 ### Versions of crypto-price-fetchers
 
-This step is optional: the lockfile names the commit of
-crypto-price-fetchers the repo installs.
-
 crypto-price-fetchers is installed straight from its GitHub project,
-rather than from npm's registry. `package.json` names it with a ref:
+rather than from npm's registry, at the commit the lockfile names, so
+this step is optional. `package.json` names it with a ref:
 `#main`, its main branch, which this repo follows, or `#semver:*`, its
 latest release, its highest version tag. `package-lock.json` keeps the
 commit the ref named when the lockfile was made, and `npm ci` installs
@@ -167,11 +180,9 @@ that commit.
 crypto-price-fetchers also holds the tool that moves it: its versions
 tool, which this repo runs as `npm run github-project-deps`. It sets the
 ref, then makes `package-lock.json` again from a fresh `node_modules`. If
-the install fails, as it does for a release whose top folder has no
-package.json, `package.json` and `package-lock.json` go back as they were,
-and `node_modules` is installed again from them.
-
-The newest commit of main:
+the install fails, `package.json` and `package-lock.json` go back as they
+were, and `node_modules` is installed again from them. The newest commit
+of main:
 
 ```bash
 npm run github-project-deps -- main
@@ -183,11 +194,17 @@ The latest release:
 npm run github-project-deps -- release
 ```
 
+No release can be installed yet: every release of crypto-price-fetchers,
+the newest being 1.3.0, came before its `package.json`, so `release`
+fails, and the files go back as they were. It works once a release with a
+`package.json` is tagged.
+
 ---
 
 ## Uninstall
 
-Delete the repo's folder, and with it the files the runs wrote there:
+From the folder that holds it, delete the repo's folder, and with it the
+files the runs wrote there:
 
 ```bash
 rm -rf x1-validator-analytics
@@ -207,7 +224,8 @@ command with its flags. Run the commands from the repo's top folder;
 
 A run needs only the vote account's public key. It writes the rewards to
 `xnt_rewards_with_prices.csv`, unless `--output` or `config.json` names
-another file, and the summary beside it, `xnt_rewards_analytics.csv`.
+another file, and the summary to `xnt_rewards_analytics.csv`, always by
+that name, in the folder it runs in.
 
 Every reward of a vote account, from its first epoch to the last one
 completed:
@@ -222,7 +240,7 @@ The last 20 epochs only, with each step logged:
 node fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
 ```
 
-Every reward, with JSON files beside the CSV files: all of it in
+Every reward, with JSON files too, in the folder it runs in: all of it in
 `xnt_rewards.json`, and the summary in `xnt_rewards_analytics.json`:
 
 ```bash
@@ -230,15 +248,6 @@ node fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
 ```
 
 `npm start -- <options>` runs the same command line.
-
-### Prices
-
-Each reward is priced in USD at its own time, from GeckoTerminal's hourly
-candles for the configured pool of XDEX, a decentralized exchange on X1,
-WXNT / USDC.X. GeckoTerminal's X1 candles start on 2026-10-01, and its
-public api serves the last 180 days, so a reward before either has empty
-price and value cells, with a warning. Amounts keep all nine of XNT's
-decimal places.
 
 ---
 
@@ -252,30 +261,36 @@ the kind of value each takes, before the script takes any setting: a key
 the script does not read, or a value of the wrong kind, stops the run,
 with every problem listed, one line each.
 
-| Setting | What it sets | Option that overrides it |
-| ------- | ------------ | ------------------------ |
-| `rpcUrl` | the X1 rpc endpoint to ask | `--rpc-url` |
-| `requestTimeoutSeconds` | how long each request to the X1 endpoint may take, its whole answer included | — |
-| `liquidityPoolAddress` | the pool whose hourly candles on GeckoTerminal price XNT, by default XDEX's WXNT / USDC.X | `--liquidity-pool-address` |
-| `xntTokenAddress` | the mint of wrapped XNT, one side of that pool | — |
-| `usdStablecoinAddress` | the mint of the USD stablecoin on the pool's other side, by default USDC.X | — |
-| `geckoTerminalApiUrl` | GeckoTerminal's api address | — |
-| `geckoTerminalNetwork` | GeckoTerminal's name for X1, `x1-network` | — |
-| `outputFile` | the main CSV file to write | `--output` |
-| `verbose` | whether to log each step | `--verbose` |
-| `epochs` | how many epochs to read, back from the last one completed; every epoch when `null` | `--epochs` |
-| `apiKeys` | the services whose keys the key store keeps, none today | — |
+A token on X1 is named by its mint, the address of the account that
+issues it, as on Solana.
+
+| Setting | What it sets | Default | Option that overrides it |
+| ------- | ------------ | ------- | ------------------------ |
+| `rpcUrl` | the X1 rpc endpoint to ask | `https://rpc.mainnet.x1.xyz` | `--rpc-url` |
+| `requestTimeoutSeconds` | how long each request to the X1 endpoint may take, its whole answer included | 30 | — |
+| `liquidityPoolAddress` | the pool whose hourly candles on GeckoTerminal price XNT | XDEX's WXNT / USDC.X, `CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR` | `--liquidity-pool-address` |
+| `xntTokenAddress` | the mint of wrapped XNT, one side of that pool | `So11111111111111111111111111111111111111112` | — |
+| `usdStablecoinAddress` | the mint of the USD stablecoin on the pool's other side | USDC.X, `B69chRzqzDCmdB5WYB8NRu5Yv5ZA95ABiZcdzCgGm9Tq` | — |
+| `geckoTerminalApiUrl` | GeckoTerminal's api address | `https://api.geckoterminal.com/api/v2` | — |
+| `geckoTerminalNetwork` | GeckoTerminal's name for X1 | `x1-network` | — |
+| `outputFile` | the main CSV file to write | `xnt_rewards_with_prices.csv` | `--output` |
+| `verbose` | whether to log each step | `false` | `--verbose` |
+| `epochs` | how many epochs to read, back from the last one completed; every epoch when `null` | `null` | `--epochs` |
+| `apiKeys` | the services whose keys the key store keeps | none | — |
 
 ---
 
 ## Lint & Test
 
 The gate, LP Ranger's, runs the lint, the tests and the security audits,
-and must pass before every commit and push. From the repo's top folder,
-after the install:
+and must pass before every commit and push. The lint runs ESLint, which
+checks JavaScript against rules; markdownlint, which checks the form of
+Markdown files; the check of Prettier, a program that formats code;
+actionlint; and knip, which finds files nothing uses. From the repo's top
+folder, after the install:
 
 ```bash
-npm run lint      # ESLint, markdownlint, Prettier's check, actionlint and knip
+npm run lint      # the linters above
 npm test          # the tests, on Node's test runner
 npm run check     # the whole gate, as CI runs it
 ```
@@ -311,8 +326,8 @@ The `docs/` folder holds three references:
 
 - [`docs/architecture.md`](docs/architecture.md): how the script works.
 - [`docs/engineering.md`](docs/engineering.md): the files, the gates, the
-  tests and CI, the checks GitHub Actions, GitHub's service for running
-  them, runs at each push.
+  tests and CI: the checks GitHub runs, through its GitHub Actions
+  service, at each push.
 - [`docs/project-commands.md`](docs/project-commands.md): every command,
   with its flags and an example.
 
@@ -349,7 +364,7 @@ tab.
 To be accepted for pull request:
 
 - All tests must pass: `npm run check` ([Lint & Test](#lint--test)).
-- Any major new functionality must have a test runnable from the current
-  approach.
-- All code must be modular, e.g. a cyclomatic complexity around 17 or
-  lower.
+- Any major new functionality must have a test among the repo's tests,
+  on Node's test runner.
+- All code must be modular: each function's cyclomatic complexity, the
+  number of paths through it, at most 17, as the lint holds it.

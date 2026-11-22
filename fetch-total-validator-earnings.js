@@ -148,7 +148,8 @@ function parseArguments(config, argv = process.argv) {
     .name("fetch-total-validator-earnings")
     .description(
       "Reads every inflation reward an X1 vote account received, prices each in USD at its own time, " +
-        "and writes them to a CSV file with running totals, and a summary beside it.",
+        "and writes them to a CSV file with running totals, and a summary to xnt_rewards_analytics.csv, " +
+        "in the folder it runs in.",
     )
     .requiredOption(
       "--vote-pubkey <pubkey>",
@@ -182,7 +183,7 @@ function parseArguments(config, argv = process.argv) {
     )
     .option(
       "--json",
-      "also write all of it as a JSON file, xnt_rewards.json",
+      "also write all of it as JSON, to xnt_rewards.json, and the summary to xnt_rewards_analytics.json, in the folder it runs in",
       false,
     )
     .addHelpText("after", HELP_AFTER)

@@ -78,8 +78,10 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
    json export names that first reward's epoch.
 3. It prices each reward at its own time (see [Prices](#prices)).
 4. It writes one row per reward, oldest first, with the running totals of
-   XNT and USD, the analytics summary beside it, and, with `--json`, both as
-   JSON.
+   XNT and USD, to the file `--output` or `config.json` names; the
+   analytics summary to `xnt_rewards_analytics.csv`, in the folder it runs
+   in; and, with `--json`, both as JSON, to `xnt_rewards.json` and
+   `xnt_rewards_analytics.json`, in that folder too.
 
 ---
 
