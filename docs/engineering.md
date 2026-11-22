@@ -65,14 +65,13 @@ settings; the keys and the reports stay on the owner's computer.
 | `api-keys.json` | no | Api keys, encrypted with the owner's password, should a service that takes one be added. |
 | `xnt_rewards_with_prices.csv`, `xnt_rewards_analytics.csv` | no | The reports, unless `--output` names another file. |
 | `xnt_rewards.json`, `xnt_rewards_analytics.json` | no | The reports as JSON, with `--json`. |
-| `coverage/` | no | A test run's coverage report. |
 
 ---
 
 ## The Gate: `npm run check`
 
 `npm run check` runs every gate, in order, and stops at the first that
-fails: the lint, the tests with coverage, then the three security audits. It
+fails: the lint, the tests with coverage, then the four security audits. It
 must pass before every commit and push, and CI runs it on Node 26, the
 newest LTS (long-term support) version, and on Node 24, the oldest the repo
 supports.
@@ -89,7 +88,7 @@ row explains:
 
 | Tool | Configured in | What it does, and what it holds the repo to |
 | ---- | ------------- | ------------------------------------------- |
-| ESLint | `eslint.config.js` | Checks JavaScript against rules: LP Ranger's, with no warning allowed: cyclomatic complexity ≤ 17, ≤ 500 lines of code a file (blank lines and comments not counted), lines ≤ 80 characters but strings, urls and comments, `===`, no unused name, no `var`, `const` where nothing is reassigned, no `Math.random`, no comment that tells Prettier, the formatter in the row below, to skip code, and every import resolved. And `no-or-default`, crypto-price-fetchers' rule against `a \|\| b` whose value is kept, as a default is, when `b` is no boolean: `\|\|` takes its fallback for every falsy value, so a default is written with `??` or an explicit check. |
+| ESLint | `eslint.config.js` | Checks JavaScript against rules: LP Ranger's, with no warning allowed: cyclomatic complexity ≤ 17, ≤ 500 lines of code a file (blank lines and comments not counted), lines ≤ 80 characters but strings, template literals, regular expressions, urls and comments, `===`, no unused name, no `var`, `const` where nothing is reassigned, no `Math.random`, no comment that tells Prettier, the formatter in the row below, to skip code, and every import resolved. And `no-or-default`, crypto-price-fetchers' rule against `a \|\| b` whose value is kept, as a default is, when `b` is no boolean: `\|\|` takes its fallback for every falsy value, so a default is written with `??` or an explicit check. |
 | markdownlint | `.markdownlint-cli2.jsonc` | Checks the form of Markdown files, with LP Ranger's settings, over every Markdown file. |
 | Prettier | `.prettierrc`, `.prettierignore` | Formats code; in check mode, it fails when its formatting would change any JavaScript, JSON or YAML file. |
 | actionlint | crypto-price-fetchers' `actionlint/release.js` | Checks the GitHub Actions workflow files, in `.github/workflows/`, for mistakes in their syntax, their expressions and the shell scripts their steps run. The lint runs the official release of actionlint, rhysd's program, through `run-actionlint`, a bin of crypto-price-fetchers: the first run downloads the archive for its system, refuses it unless its SHA-256 is the one crypto-price-fetchers pins, and keeps the program in `node_modules/.cache/actionlint/`, which later runs use. |

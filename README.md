@@ -74,11 +74,12 @@ before you rely on them, for your taxes or for anything else.
 
 The two CSV files a run writes, opened in Google Sheets, Google's
 spreadsheet app: the rewards, each with its price and the running totals,
-and the summary. The pictures come from an older version, which priced
-every reward at 1; the script now leaves a reward before 2026-10-01
-unpriced and prices the rest from the pool, as [Prices](#prices) says.
-Its summary's labels have changed, and the rewards' date column, shown
-as `Reward Date (UTC, approx)`, is now `Reward Date (UTC)`.
+and the summary. The pictures show an earlier layout: their prices, the
+summary's labels and the date column's name, `Reward Date (UTC, approx)`,
+differ from a run's now. A run names the date column `Reward Date (UTC)`
+and prices each reward as [Prices](#prices) says, leaving a reward before
+2026-10-01, or older than GeckoTerminal's public api reaches, about 220
+days back, without a price.
 
 ![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png)
 ![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png)
@@ -277,7 +278,7 @@ issues it, as on Solana.
 | `geckoTerminalApiUrl` | GeckoTerminal's api address | `https://api.geckoterminal.com/api/v2` | — |
 | `geckoTerminalNetwork` | GeckoTerminal's name for X1 | `x1-network` | — |
 | `outputFile` | the main CSV file to write | `xnt_rewards_with_prices.csv` | `--output` |
-| `verbose` | whether to log each step | `false` | `--verbose` |
+| `verbose` | whether to log each step | `false` | `--verbose`, or `--no-verbose` to turn it off |
 | `epochs` | how many epochs to read, back from the last one completed; every epoch when `null` | `null` | `--epochs` |
 | `apiKeys` | the services whose keys the key store keeps | none | — |
 

@@ -5,12 +5,15 @@ validator's rewards and prices them in USD, with what each does and what to
 type. Most run through npm, the package manager of Node, the program that
 runs JavaScript outside a browser, from the repo's `package.json`, in the
 repo's top folder. The rest run with `node`, or `source`, at a terminal
-([Commands Run Without npm](#commands-run-without-npm)). Two of them run tools of crypto-price-fetchers, the owner's
-repo of code his projects share, which this repo installs from GitHub, the
-website that hosts his code:
-`api-keys`, its key manager, which saves and lists the api keys, and
-`github-project-deps`, its versions tool, which moves crypto-price-fetchers
-to its newest main or its latest release.
+([Commands Run Without npm](#commands-run-without-npm)). Four of them run
+tools of crypto-price-fetchers, the owner's repo of code his projects
+share, which this repo installs from GitHub, the website that hosts his
+code: `api-keys`, its key manager, which saves and lists the api keys;
+`github-project-deps`, its versions tool, which moves
+crypto-price-fetchers to its newest main or its latest release; and
+`lint` and `audit:actionlint`, its `run-actionlint`, which runs
+actionlint, the checker of GitHub Actions workflow files, from its
+official release.
 
 Each command runs on both major versions of Node the repo supports: the
 newest LTS (long-term support) version, today 26, and the version two
@@ -64,7 +67,7 @@ command runs it.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
-| `start` | `--vote-pubkey` (required), `--rpc-url`, `--liquidity-pool-address`, `--output`/`-o`, `--epochs`/`-n`, `--verbose`/`-v`, `--json`, `--help`/`-h` | Read the vote account's rewards and write the reports. `npm start -- --help` describes each flag, with examples and the exit codes. | `npm start -- --vote-pubkey <vote account> --json` |
+| `start` | `--vote-pubkey` (required), `--rpc-url`, `--liquidity-pool-address`, `--output`/`-o`, `--epochs`/`-n`, `--verbose`/`-v`, `--no-verbose`, `--json`, `--help`/`-h` | Read the vote account's rewards and write the reports. `npm start -- --help` describes each flag, with examples and the exit codes. | `npm start -- --vote-pubkey <vote account> --json` |
 
 ---
 
