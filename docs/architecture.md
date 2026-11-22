@@ -62,6 +62,7 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
    script takes a setting, and each option's parser is made from the kind
    of value the schema gives the same setting, so a mistake in either stops
    the run, naming the setting or the option, before the chain is asked.
+   So does an output file whose folder does not exist.
 2. The script finds the vote account and the current epoch, then asks the
    endpoint for the account's inflation reward in each epoch, from the last
    completed one back to epoch 0, or as many as asked. A reward's time is
@@ -82,7 +83,14 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
    XNT and USD, to the file `--output` or `config.json` names; the
    analytics summary to `xnt_rewards_analytics.csv`, in the folder it runs
    in; and, with `--json`, both as JSON, to `xnt_rewards.json` and
-   `xnt_rewards_analytics.json`, in that folder too.
+   `xnt_rewards_analytics.json`, in that folder too. Then it prints the
+   summary.
+
+A run sets its exit code to 1 as it starts, and to 0 once the files are
+written, or the account is found to have no rewards. crypto-price-fetchers'
+`endQuietlyWhenOutputCloses` ends a run whose output's reader stops
+reading, as `head` does, at once, with the code set so far, so a run cut
+short before its files are written ends with 1.
 
 ---
 

@@ -187,12 +187,7 @@ validator's rewards over the full history, checked on 2026-11-10.
 
 ## Known bugs
 
-Three are known, each with its test in `test/known-bugs.test.js`: a run
-whose output's reader stops reading, as `head` does, ends at once with exit
-code 0, though it wrote no file; an `--output` in a folder that does not
-exist is refused only after every request; and the progress bar counts
-out of `--epochs` when fewer epochs exist.
-When one is found, it gets a test in
+None is known. When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the

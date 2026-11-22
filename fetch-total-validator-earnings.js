@@ -13,7 +13,8 @@
  *
  * @notes
  * - Processes from current-1 back to epoch 0 by default (full history).
- * - Uses X1-specific getInflationReward (epoch as plain u64).
+ * - Reads each epoch's reward with getInflationReward, a method of the json-rpc api Solana
+ *   defines, which X1 keeps.
  * - Per-epoch error handling: a failed query is skipped and counted, apart from an epoch the endpoint
  *   answers with no reward for the account, as it does for an epoch before the account began.
  * - Each request to the X1 endpoint gets its whole answer within requestTimeoutSeconds of
@@ -39,6 +40,8 @@
  * - Requires Node 24 or later, as the repo's package.json says.
  */
 
+import fs from "node:fs";
+import path from "node:path";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { Command } from "commander";
 import { endQuietlyWhenOutputCloses } from "crypto-price-fetchers/lib/closed-output";
@@ -103,7 +106,8 @@ async function lookUpPrices(rewards, source) {
 /** What the help says after the options: where the defaults come from, examples, exit codes. */
 const HELP_AFTER = `
 The defaults of --rpc-url, --liquidity-pool-address, --output, --verbose
-and --epochs come from config.json in the folder the script runs in. When
+and --epochs come from config.json in the folder the script runs in;
+--no-verbose turns off a verbose that config.json sets. When
 config.json is refused, --help shows the defaults written in the script
 (configLoader.js), and any other run stops: on a mistake in its options
 when it has one, else on the file's problems.
@@ -123,9 +127,11 @@ Exit codes:
   0  the CSV files were written, or the account had no rewards; a reward
      query that failed is skipped, and the summary counts it, as
      unexpected outside epochs 0 to 15
-  1  an option was wrong or missing, config.json was refused, the vote
-     account was not found, another request to the chain failed, or the
-     chain gave no block time for a reward`;
+  1  an option was wrong or missing, config.json was refused, the folder
+     of --output does not exist, the vote account was not found, another
+     request to the chain failed, the chain gave no block time for a
+     reward, a file could not be written, or the program reading the
+     output stopped reading before the files were written`;
 
 /**
  * The parsers of the options that take a value, made from the kinds of
@@ -157,7 +163,7 @@ function parseArguments(config, argv = process.argv) {
     )
     .requiredOption(
       "--vote-pubkey <pubkey>",
-      "the vote account's public key",
+      "the vote account's public key (required)",
       PARSE.publicKey,
     )
     .option(
@@ -168,7 +174,7 @@ function parseArguments(config, argv = process.argv) {
     )
     .option(
       "--liquidity-pool-address <address>",
-      "the pool whose hourly candles on GeckoTerminal price XNT",
+      "the pool whose hourly candles on GeckoTerminal price XNT: one that pairs XNT with the USD stablecoin config.json's usdStablecoinAddress names",
       PARSE.publicKey,
       config.liquidityPoolAddress,
     )
@@ -179,6 +185,7 @@ function parseArguments(config, argv = process.argv) {
       config.outputFile,
     )
     .option("-v, --verbose", "log each step", config.verbose)
+    .option("--no-verbose", "log no step, whatever config.json sets")
     .option(
       "-n, --epochs <count>",
       "how many epochs to read, back from the last one completed; every epoch when unset",
@@ -454,8 +461,12 @@ async function fetchRewardsForEpochs(
   const rewards = [];
   const outcomes = [];
 
+  // The epochs there are, from the last one completed back to epoch 0, or
+  // fewer when --epochs asks for fewer
   const estimatedTotal =
-    maxEpochs !== null && maxEpochs !== undefined ? maxEpochs : currentEpoch;
+    maxEpochs !== null && maxEpochs !== undefined
+      ? Math.min(maxEpochs, currentEpoch)
+      : currentEpoch;
 
   const lastEpoch =
     maxEpochs !== null && maxEpochs !== undefined
@@ -556,6 +567,15 @@ async function main() {
   }
   const argv = parseArguments(config);
   if (refused !== null) throw refused;
+  const outputFolder = path.dirname(path.resolve(argv.output));
+  if (!fs.existsSync(outputFolder) || !fs.statSync(outputFolder).isDirectory())
+    throw new Error(
+      `option '-o, --output <file>' argument '${argv.output}' is invalid: its folder, ${outputFolder}, does not exist.`,
+    );
+  // endQuietlyWhenOutputCloses ends a run whose output's reader stops
+  // reading, as head does, with the exit code set so far: 1 until the
+  // files are written, or the account is found to have no rewards
+  process.exitCode = 1;
 
   const connection = createConnection(
     argv.rpcUrl,
@@ -579,6 +599,7 @@ async function main() {
   );
 
   if (rewards.length === 0) {
+    process.exitCode = 0;
     console.log("No rewards found.");
     console.log("Tip: Check validator dashboard for credit history.");
     return;
@@ -602,7 +623,6 @@ async function main() {
   const rows = rewardRows(rewards, prices);
   const summary = summarizeRewards(rows, counts);
 
-  printSummary(summary);
   writeMainCsv(rows, argv.output);
   writeAnalyticsCsv(summary);
 
@@ -610,6 +630,8 @@ async function main() {
   // the account had a reward
   const firstRewardEpoch = Math.min(...rewards.map((reward) => reward.epoch));
   writeJsonExport(rows, summary, { currentEpoch, firstRewardEpoch }, argv.json);
+  process.exitCode = 0;
+  printSummary(summary);
 }
 
 endQuietlyWhenOutputCloses();
