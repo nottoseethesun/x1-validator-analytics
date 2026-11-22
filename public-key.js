@@ -9,8 +9,9 @@
  * `description` is the words a refusal uses, checked by the format
  * `public-key`, which `PUBLIC_KEY_FORMATS` gives crypto-price-fetchers'
  * schema checks (`crypto-price-fetchers/lib/settings-schema`). web3.js,
- * Solana's JavaScript library, which X1 uses as a Solana fork, decodes the
- * key, so text that is base58 but not 32 bytes is refused too.
+ * Solana's JavaScript library, which this module and the script use since
+ * X1 is a fork of Solana, decodes the key, so text that is base58 but not
+ * 32 bytes is refused too.
  */
 
 import { PublicKey } from "@solana/web3.js";
