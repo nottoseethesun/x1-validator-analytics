@@ -514,6 +514,36 @@ describe("fetch-total-validator-earnings.js, against an endpoint that does not a
   });
 });
 
+describe("fetch-total-validator-earnings.js, against an endpoint that stops in the middle of its answer", () => {
+  let standIns;
+  let run;
+
+  before(async () => {
+    standIns = await startStandIns({ stopsInBody: true }, () => ({
+      candles: [],
+    }));
+    run = await runScript({
+      rpcUrl: standIns.x1.url,
+      geckoTerminalUrl: standIns.server.url,
+      config: { requestTimeoutSeconds: 1 },
+      timeoutMs: 15000,
+    });
+  });
+
+  after(async () => {
+    if (standIns !== undefined) await standIns.close();
+  });
+
+  it("stops waiting for the rest after requestTimeoutSeconds, saying so, with exit code 1", () => {
+    assert.equal(run.killed, false, "the run was stopped after 15 seconds");
+    assert.equal(run.code, 1);
+    assert.match(
+      run.stderr,
+      /^Error: The X1 endpoint at http:\/\/127\.0\.0\.1:\d+ gave no answer within 1 seconds$/m,
+    );
+  });
+});
+
 describe("fetch-total-validator-earnings.js, with a time limit config.json cannot give", () => {
   it("refuses requestTimeoutSeconds that is not a number of seconds above 0, with exit code 1", async () => {
     const standIns = await startStandIns({}, () => ({ candles: [] }));

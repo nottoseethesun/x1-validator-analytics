@@ -52,8 +52,9 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 ## A Run
 
 1. The settings come from `config.json` and the command line: the X1
-   endpoint, how long a request to it may go without an answer before it
-   counts as failed (`requestTimeoutSeconds`, 30 unless set), the vote
+   endpoint, how long a request to it may take to answer in full before it
+   counts as failed (`requestTimeoutSeconds`, 30 unless set, through
+   crypto-price-fetchers' `fetchWithinTimeLimit`), the vote
    account, the pool prices come from, the output file, and how many epochs
    to read.
 2. The script finds the vote account and the current epoch, then asks the
