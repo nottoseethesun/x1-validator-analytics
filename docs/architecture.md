@@ -94,8 +94,11 @@ GeckoTerminal's candles for the configured pool, WXNT / USDC.X on XDEX, a
 decentralized exchange on X1. The candles are asked in the pool's own rate
 (`currency=token`), since GeckoTerminal's USD candles for XNT show one fixed
 price at every hour. GeckoTerminal's X1 candles start on 2026-10-01, and its
-public api serves the last 180 days: a reward before either gets an empty
-price cell and a warning, never a stand-in price.
+public api serves candles back to about 220 days ago: it answers a request
+only when its before-time is within the last 180 days, and the client's
+last page, asked a day inside that edge, reaches a thousand hourly candles
+further back, more where hours went without a trade. A reward before
+either gets an empty price cell and a warning, never a stand-in price.
 
 crypto-price-fetchers' GeckoTerminal client
 (`crypto-price-fetchers/dex-prices/geckoterminal`) asks for the candles, a

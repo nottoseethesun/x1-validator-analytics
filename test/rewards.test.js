@@ -163,7 +163,7 @@ describe("analyticsMetrics", () => {
 
   it("starts with the date range, and gives the exact total and the count of rewards with no price", () => {
     assert.deepEqual(metrics[0], [
-      "Final Date Range (approx)",
+      "Final Date Range",
       "2026-11-08 to 2026-11-10",
     ]);
     assert.deepEqual(

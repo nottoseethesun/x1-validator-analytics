@@ -25,7 +25,7 @@ import { analyticsMetrics } from "./summary.js";
 export function writeMainCsv(rows, outputPath) {
   const columns = [
     "Epoch",
-    "Reward Date (UTC, approx)",
+    "Reward Date (UTC)",
     "XNT Amount",
     "Cumulative XNT",
     "XNT Price (USD)",

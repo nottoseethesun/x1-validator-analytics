@@ -11,8 +11,9 @@
  * and a low apart from it, so a test tells the close from the rest; asked in
  * USD (`currency=usd`), it gives GeckoTerminal's
  * fixed USD price for XNT at every hour, as the live api does for X1. A test
- * can have it refuse its first requests with given statuses. It records
- * each url asked.
+ * can have it refuse its first requests with given statuses, or, as the
+ * public api does, refuse with 401 a request whose `before_timestamp` is
+ * older than a time it names. It records each url asked.
  *
  * The same stand-in answers two ways: `standInGeckoFetch` gives a fetch for
  * code a test calls in its own process, and `serveStandInGeckoTerminal`
@@ -48,6 +49,8 @@ export const LOW_SHARE = 0.75;
  * @param {string[]} [market.pair=[XNT, USDC_X]] - The pool's base and quote tokens' addresses
  * @param {number[]} [market.refusals=[]] - Statuses to answer instead of candles, one per request, from the first
  * @param {boolean} [market.ignoresBefore=false] - Whether to answer the newest candles whatever `before_timestamp` says
+ * @param {?number} [market.publicSince=null] - The oldest `before_timestamp` it answers, in unix seconds, as the
+ *   public api answers the last 180 days; an older one gets 401, and none is refused when null
  * @returns {{answer: function(string): {status: number, body: Object}, asked: string[]}} The stand-in
  */
 export function standInGeckoTerminal({
@@ -56,6 +59,7 @@ export function standInGeckoTerminal({
   pair = [XNT, USDC_X],
   refusals = [],
   ignoresBefore = false,
+  publicSince = null,
 }) {
   const pending = [...refusals];
   const asked = [];
@@ -74,6 +78,15 @@ export function standInGeckoTerminal({
         body: { status: { error_code: "refused" } },
       };
     const query = url.searchParams;
+    if (
+      publicSince !== null &&
+      query.has("before_timestamp") &&
+      Number(query.get("before_timestamp")) < publicSince
+    )
+      return {
+        status: 401,
+        body: { errors: [{ status: "401", title: "Unauthorized" }] },
+      };
     const before = ignoresBefore
       ? Number.MAX_SAFE_INTEGER
       : Number(query.get("before_timestamp") ?? Number.MAX_SAFE_INTEGER);

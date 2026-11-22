@@ -172,11 +172,7 @@ deleted. The steps from a branch to `main` are LP Ranger's eight, in its
 
 ## Known Bugs
 
-One is known, with its test in `test/known-bugs.test.js`: the rewards
-csv names its date column `Reward Date (UTC, approx)`, and the summary
-its date range approximate, though each date is the block time the chain
-gives.
-A bug found gets a test in `test/known-bugs.test.js`,
+None is known. A bug found gets a test in `test/known-bugs.test.js`,
 declared with `knownBug` (`test/helpers/known-bug.js`), so the test passes
 while the bug is present. The bug's fix makes its test fail; the same change
 declares the test with `it`, among the tests of the code it is about.

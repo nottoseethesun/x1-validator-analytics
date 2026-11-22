@@ -118,7 +118,7 @@ export function summarizeRewards(rows, counts) {
  */
 export function analyticsMetrics(summary) {
   return [
-    ["Final Date Range (approx)", summary.dateRange],
+    ["Final Date Range", summary.dateRange],
     ["Days Covered", summary.days],
     ["Total XNT Earned", summary.totalXnt],
     ["Average $XNT Earned Per Day", summary.averageDailyXnt],

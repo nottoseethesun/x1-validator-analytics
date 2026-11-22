@@ -330,7 +330,7 @@ describe("fetch-total-validator-earnings.js, full history, with prices from midw
     assert.equal(run.json.rewards.length, 14);
     assert.deepEqual(run.json.rewards[0], {
       epoch: 16,
-      rewardDate: run.rows[0]["Reward Date (UTC, approx)"],
+      rewardDate: run.rows[0]["Reward Date (UTC)"],
       xntAmount: "1.234567891",
       cumulativeXNT: "1.234567891",
       priceUSD: null,
@@ -468,6 +468,7 @@ describe("fetch-total-validator-earnings.js, an account that began at epoch 20",
 
   it("warns of the one failed query, and prints the counts", () => {
     assert.match(run.stderr, /Warning: 1 epochs failed to query/);
+    assert.match(run.stdout, /Final date range: \d{4}-\d\d-\d\d to /);
     assert.match(run.stdout, /Epochs without a reward: 20\n/);
     assert.match(run.stdout, /Failed epoch queries: 1\n/);
     assert.match(

@@ -27,8 +27,10 @@ with their prices and candles, for the configured pool, asked in the pool's
 own rate (`currency=token`). GeckoTerminal's USD candles for XNT
 (`currency=usd`) show one fixed price at every hour, so they are never used.
 GeckoTerminal's X1 candles start on 2026-10-01, and its public api serves
-the last 180 days; a reward before either gets an empty price cell and a
-warning, never a stand-in price. The GeckoTerminal client
+candles back to about 220 days ago: it answers a request only when its
+before-time is within the last 180 days, and a page reaches a thousand
+hourly candles back from that. A reward before either gets an empty price
+cell and a warning, never a stand-in price. The GeckoTerminal client
 (`crypto-price-fetchers/dex-prices/geckoterminal`) of crypto-price-fetchers,
 the owner's repo of code his projects share, which this repo installs
 (below), asks for the candles and finds each price, within its budget of
@@ -185,11 +187,7 @@ validator's rewards over the full history, checked on 2026-11-10.
 
 ## Known bugs
 
-One is known, with its test in `test/known-bugs.test.js`: the rewards
-csv names its date column `Reward Date (UTC, approx)`, and the summary
-its date range approximate, though each date is the block time the chain
-gives.
-When one is found, it gets a test in
+None is known. When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
