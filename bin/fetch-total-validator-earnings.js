@@ -6,7 +6,7 @@
  * cumulative columns) + separate analytics summary. Optional JSON export available.
  *
  * @usage
- * `node fetch-total-validator-earnings.js --help` lists every option, with
+ * `node bin/fetch-total-validator-earnings.js --help` lists every option, with
  * examples of its common uses and its exit codes; the command line is
  * declared with commander, the package that parses command lines, in
  * `parseArguments` below.
@@ -52,14 +52,14 @@ import {
 } from "crypto-price-fetchers/lib/settings-schema";
 import { fetchWithinTimeLimit } from "crypto-price-fetchers/lib/time-limited-fetch";
 import moment from "moment";
-import { DEFAULTS, loadConfig } from "./configLoader.js";
-import { PUBLIC_KEY, PUBLIC_KEY_FORMATS } from "./public-key.js";
-import { writeMainCsv, writeAnalyticsCsv } from "./csvWriter.js";
-import { writeJsonExport } from "./jsonWriter.js";
-import { formatXnt } from "./xnt-amount.js";
-import { geckoTerminalSource, priceTimes } from "./xnt-price.js";
-import { rewardRows } from "./rewards.js";
-import { countEpochs, summarizeRewards } from "./summary.js";
+import { DEFAULTS, loadConfig } from "../configLoader.js";
+import { PUBLIC_KEY, PUBLIC_KEY_FORMATS } from "../public-key.js";
+import { writeMainCsv, writeAnalyticsCsv } from "../csvWriter.js";
+import { writeJsonExport } from "../jsonWriter.js";
+import { formatXnt } from "../xnt-amount.js";
+import { geckoTerminalSource, priceTimes } from "../xnt-price.js";
+import { rewardRows } from "../rewards.js";
+import { countEpochs, summarizeRewards } from "../summary.js";
 
 /**
  * Prices each reward at its own time, from GeckoTerminal's hourly candles.
@@ -115,11 +115,11 @@ when it has one, else on the file's problems.
 Examples:
   Every reward of a vote account, from its first epoch to the last one
   completed, written to the CSV file config.json names:
-    $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account>
+    $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account>
   The last 20 epochs only, with each step logged:
-    $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
+    $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
   Every reward, with the JSON files too, in the folder it runs in:
-    $ node fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
+    $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
   The same first run, through npm:
     $ npm start -- --vote-pubkey <vote-account>
 

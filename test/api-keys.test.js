@@ -1,7 +1,7 @@
 /**
  * Tests of how x1-validator-analytics keeps api keys: crypto-price-fetchers'
  * key store, with the keys this repo's programs send listed in its top
- * `config.json`, its key manager, and its copy of `unlock-api-keys.sh`.
+ * `config.json`, its key manager, and its copy of `bin/unlock-api-keys.sh`.
  * @module test/api-keys.test
  *
  * The manager runs with a key file of its own in a temp folder, removed
@@ -25,13 +25,18 @@ describe("the api keys", () => {
     assert.deepEqual(readNeededKeys(REPO_TOP), []);
   });
 
-  it("are unlocked by a copy of crypto-price-fetchers' unlock-api-keys.sh", () => {
+  it("are unlocked by a copy of crypto-price-fetchers' bin/unlock-api-keys.sh", () => {
     const store = fileURLToPath(
       import.meta.resolve("crypto-price-fetchers/api-key-store"),
     );
-    const theirs = path.join(path.dirname(store), "..", "unlock-api-keys.sh");
+    const theirs = path.join(
+      path.dirname(store),
+      "..",
+      "bin",
+      "unlock-api-keys.sh",
+    );
     assert.equal(
-      fs.readFileSync(path.join(REPO_TOP, "unlock-api-keys.sh"), "utf8"),
+      fs.readFileSync(path.join(REPO_TOP, "bin", "unlock-api-keys.sh"), "utf8"),
       fs.readFileSync(theirs, "utf8"),
     );
   });
@@ -48,7 +53,7 @@ describe("the api keys", () => {
       delete env.API_KEYS_PASSWORD;
       const run = spawnSync(
         process.execPath,
-        [path.join(REPO_TOP, "manage-api-keys.js")],
+        [path.join(REPO_TOP, "bin", "manage-api-keys.js")],
         { env, input: "", encoding: "utf8", timeout: 15000 },
       );
       assert.equal(run.status, 0, run.stderr);

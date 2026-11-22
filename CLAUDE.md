@@ -37,16 +37,24 @@ the owner's repo of code his projects share, which this repo installs
 requests and with its waits after a 429; this repo keeps no client of its
 own. `xnt-price.js` explains the rest.
 
+## Where things are
+
+The programs a reader runs from a terminal are in `bin/`: the script,
+`bin/fetch-total-validator-earnings.js`, the key manager and
+`unlock-api-keys.sh`. The modules the script uses stay at the repo's
+top. The script reads `config.json` from the folder it runs in, as
+before.
+
 ## Keys
 
 The script sends no api key today. Should it come to, the key is kept as
 crypto-price-fetchers' key store keeps keys
 (`crypto-price-fetchers/api-key-store`): the service is listed in the top
 `config.json` under `apiKeys`, `npm run api-keys` runs the manager
-(`manage-api-keys.js`), and `source ./unlock-api-keys.sh`, a script at the
-repo's top, keeps the password for a terminal. `unlock-api-keys.sh` is a
-copy of crypto-price-fetchers', which a test holds it to; a change to it is
-made there. A key is never a setting in a file git keeps, nor a command-line
+(`bin/manage-api-keys.js`), and `source ./bin/unlock-api-keys.sh`, a
+script in `bin/`, keeps the password for a terminal.
+`bin/unlock-api-keys.sh` is a copy of crypto-price-fetchers', which a
+test holds it to; a change to it is made there. A key is never a setting in a file git keeps, nor a command-line
 argument.
 
 ## Settings
