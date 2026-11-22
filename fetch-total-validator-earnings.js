@@ -32,7 +32,8 @@
  * - CSV files include UTF-8 BOM for correct opening in LibreOffice/Excel.
  * - A failed query in epochs 0 to 15 is expected: X1's chain was rolled back early in its life, and its
  *   endpoint cannot give the rewards of some of those epochs, epoch 15 among them.
- * - Reward dates now use real block time from effectiveSlot + getBlockTime() when available.
+ * - A reward's date is the block time of its effective slot, from getBlockTime(). A failed request for it is
+ *   asked again twice, 2 seconds apart; when the chain still gives none, the run stops, naming the epoch.
  * - Settings come from config.json in the folder the script runs in (see configLoader.js).
  * - Requires Node 24 or later, as the repo's package.json says.
  */
@@ -103,7 +104,8 @@ const HELP_AFTER = `
 The defaults of --rpc-url, --liquidity-pool-address, --output, --verbose
 and --epochs come from config.json in the folder the script runs in. When
 config.json is refused, --help shows the defaults written in the script
-(configLoader.js), and any other run stops on the file's problems.
+(configLoader.js), and any other run stops: on a mistake in its options
+when it has one, else on the file's problems.
 
 Examples:
   Every reward of a vote account, from its first epoch to the last one
@@ -118,7 +120,8 @@ Examples:
 
 Exit codes:
   0  the CSV files were written, or the account had no rewards
-  1  an option was wrong or missing, or a request to the chain failed`;
+  1  an option was wrong or missing, config.json was refused, a request to
+     the chain failed, or the chain gave no block time for a reward`;
 
 /**
  * The parsers of the options that take a value, made from the kinds of
