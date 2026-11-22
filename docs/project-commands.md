@@ -1,10 +1,11 @@
-# x1-validator-analytics — `npm` Project Commands
+# x1-validator-analytics — Project Commands
 
 Every command of x1-validator-analytics, the owner's tool that reads an X1
-validator's rewards and prices them in USD, that npm, the package manager of
-Node, the program that runs JavaScript outside a browser, runs from the
-repo's `package.json`, from the repo's top folder, with what each does and
-what to type. Two of them run tools of crypto-price-fetchers, the owner's
+validator's rewards and prices them in USD, with what each does and what to
+type. Most run through npm, the package manager of Node, the program that
+runs JavaScript outside a browser, from the repo's `package.json`, in the
+repo's top folder. The rest run with `node`, or `source`, at a terminal
+([Commands Run Without npm](#commands-run-without-npm)). Two of them run tools of crypto-price-fetchers, the owner's
 repo of code his projects share, which this repo installs from GitHub, the
 website that hosts his code:
 `api-keys`, its key manager, which saves and lists the api keys, and
@@ -29,6 +30,7 @@ gates work. This file covers how to drive them.
 - [Developer Tools](#developer-tools)
 - [Test](#test)
 - [Commands That Are Usually Not Run Alone](#commands-that-are-usually-not-run-alone)
+- [Commands Run Without npm](#commands-run-without-npm)
 - [See Also](#see-also)
 
 ---
@@ -124,6 +126,19 @@ npm runs this command itself, after another one.
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
 | `prepare` | — | Runs after `npm install`; installs the husky hooks. | automatic |
+
+---
+
+## Commands Run Without npm
+
+These command lines run with `node`, or, for the password script,
+`source`, at a terminal, in the repo's top folder.
+[The README's Usage](../README.md#usage) shows the script at work.
+
+| Command | Flags | Description | Example |
+| ------- | ----- | ----------- | ------- |
+| `node fetch-total-validator-earnings.js` | the flags of `start` above | The script, as `npm start` runs it. `--help` describes each flag, with examples and the exit codes. | `node fetch-total-validator-earnings.js --vote-pubkey <vote account> --epochs 20` |
+| `source ./unlock-api-keys.sh` | — | Asks for the key store's password, showing nothing typed, checks that it opens every key saved, and keeps it in `API_KEYS_PASSWORD` for the terminal, so the programs open their keys without asking. Runs in bash or zsh. | `source ./unlock-api-keys.sh` |
 
 ---
 

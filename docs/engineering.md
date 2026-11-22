@@ -3,10 +3,10 @@
 The files the script reads and writes, the gates every change passes, the
 tests, and CI: the same gates, run at each push by GitHub Actions, the
 service of GitHub, the website that hosts the repo. For how the script works, see
-[`docs/architecture.md`](architecture.md); for every command the
+[`docs/architecture.md`](architecture.md); for every command, those the
 repo's `package.json` gives npm, the package manager of Node, the program
-that runs JavaScript outside a browser, to run, see
-[`docs/npm-project-commands.md`](npm-project-commands.md).
+that runs JavaScript outside a browser, to run and those run with `node`
+or `source`, see [`docs/project-commands.md`](project-commands.md).
 
 The repo follows the coding standards of LP Ranger, the owner's bot that
 manages his 9mm V3 liquidity positions: its `CLAUDE.md` and
