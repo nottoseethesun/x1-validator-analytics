@@ -172,7 +172,12 @@ deleted. The steps from a branch to `main` are LP Ranger's eight, in its
 
 ## Known Bugs
 
-None is known. A bug found gets a test in `test/known-bugs.test.js`,
+Three are known, each with its test in `test/known-bugs.test.js`: a run
+whose output's reader stops reading, as `head` does, ends at once with exit
+code 0, though it wrote no file; an `--output` in a folder that does not
+exist is refused only after every request; and the progress bar counts
+out of `--epochs` when fewer epochs exist.
+A bug found gets a test in `test/known-bugs.test.js`,
 declared with `knownBug` (`test/helpers/known-bug.js`), so the test passes
 while the bug is present. The bug's fix makes its test fail; the same change
 declares the test with `it`, among the tests of the code it is about.
