@@ -7,7 +7,7 @@
  * removed afterwards; the repo's own `config.json` is read, never written.
  */
 
-import { after, describe, it, mock } from "node:test";
+import { after, describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -51,16 +51,18 @@ describe("loadConfig", () => {
   });
 
   it("gives the defaults, with a notice, when there is no config.json", () => {
-    const warn = mock.method(console, "warn", () => {});
-    try {
-      assert.deepEqual(loadConfig(path.join(folder, "none.json")), DEFAULTS);
-      assert.match(
-        warn.mock.calls[0].arguments[0],
-        /none\.json in this folder: the run takes the defaults/,
-      );
-    } finally {
-      warn.mock.restore();
-    }
+    const notices = [];
+    assert.deepEqual(
+      loadConfig(path.join(folder, "none.json"), (notice) =>
+        notices.push(notice),
+      ),
+      DEFAULTS,
+    );
+    assert.equal(notices.length, 1);
+    assert.match(
+      notices[0],
+      /none\.json in this folder: the run takes the defaults/,
+    );
   });
 
   it("refuses a key no setting has and a public key, a url or a time limit of the wrong kind, listing every problem", () => {
