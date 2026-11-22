@@ -40,7 +40,8 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 | Module | What it does |
 | ------ | ------------ |
 | `fetch-total-validator-earnings.js` | The command line, declared with commander, the package that parses a command line and writes its help: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. `--help` lists its options, with examples and its exit codes. |
-| `configLoader.js` | The settings: `config.json`, over the defaults. |
+| `configLoader.js` | The settings: `config.json`, checked against its JSON Schema, over the defaults. |
+| `public-key.js` | A public key, as X1 writes an address: 32 bytes in base58, the kind of value the options and settings that hold one share. |
 | `xnt-price.js` | XNT's USD price at a time, from GeckoTerminal, through crypto-price-fetchers' GeckoTerminal client. |
 | `xnt-amount.js` | Amounts of XNT, exact to the lamport. |
 | `rewards.js` | The report's rows, with their running totals. |
@@ -56,7 +57,10 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
    counts as failed (`requestTimeoutSeconds`, 30 unless set, through
    crypto-price-fetchers' `fetchWithinTimeLimit`), the vote
    account, the pool prices come from, the output file, and how many epochs
-   to read.
+   to read. `config.json` is checked against its JSON Schema before the
+   script takes a setting, and each option's parser is made from the kind
+   of value the schema gives the same setting, so a mistake in either stops
+   the run, naming the setting or the option, before the chain is asked.
 2. The script finds the vote account and the current epoch, then asks the
    endpoint for the account's inflation reward in each epoch, from the last
    completed one back to epoch 0, or as many as asked. A reward's time is
@@ -135,8 +139,10 @@ client, the key store, the lint rules against printing a secret and
 against a default made with `||` (`no-or-default`), `run-actionlint`,
 which runs actionlint, the checker of GitHub Actions workflow files, from
 its official release, refused unless its SHA-256 and its program's are the
-ones crypto-price-fetchers pins, the helpers that check an url and end a
-command line quietly when its output closes, and the checks its tests make
+ones crypto-price-fetchers pins, the checks of a settings file against its
+JSON Schema and the option parsers made from the same kinds of value, the
+helper that ends a command line quietly when its output closes, the time
+limit on each request to the X1 endpoint, and the checks its tests make
 of each command line's help and of the repo's tracked files. `package.json` names its main branch (`#main`), and
 `package-lock.json` keeps the commit installed, which `npm ci` installs.
 crypto-price-fetchers' versions tool, which this repo runs as
