@@ -11,6 +11,10 @@ website that hosts his code:
 `github-project-deps`, its versions tool, which moves crypto-price-fetchers
 to its newest main or its latest release.
 
+Each command runs on both major versions of Node the repo supports: the
+newest LTS (long-term support) version, today 26, and the version two
+majors before it, today 24.
+
 Companion to [`docs/engineering.md`](engineering.md), which covers how the
 gates work. This file covers how to drive them.
 
