@@ -54,15 +54,18 @@ export function writeMainCsv(rows, outputPath) {
 }
 
 /**
+ * The summary analytics CSV, a path from the folder the script runs in: in
+ * its `output/csv/`, which git ignores but for its `.gitkeep`.
+ */
+export const ANALYTICS_CSV = "output/csv/xnt_rewards_analytics.csv";
+
+/**
  * Writes the summary analytics CSV with all metrics.
  *
  * @param {Object} summary - The run's summary (`summarizeRewards` in summary.js).
- * @param {string} [analyticsPath='xnt_rewards_analytics.csv'] - Path to analytics CSV file.
+ * @param {string} [analyticsPath=ANALYTICS_CSV] - Path to analytics CSV file.
  */
-export function writeAnalyticsCsv(
-  summary,
-  analyticsPath = "xnt_rewards_analytics.csv",
-) {
+export function writeAnalyticsCsv(summary, analyticsPath = ANALYTICS_CSV) {
   const csvContent = stringify([
     ["Metric", "Value"],
     ...analyticsMetrics(summary),

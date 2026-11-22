@@ -1,6 +1,7 @@
 # Files Prettier does not check or rewrite: npm owns the lockfiles, the
-# coverage folders are test output, and api-keys.json is written by the key
-# store.
+# coverage folders are test output, api-keys.json is written by the key
+# store, and output/ holds the owner's own files, which git ignores.
 package-lock.json
 coverage/
 api-keys.json
+output/

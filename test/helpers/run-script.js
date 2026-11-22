@@ -4,7 +4,9 @@
  * @module test/helpers/run-script
  *
  * The script runs in a temp folder of its own, removed afterwards, so it
- * writes nothing into the repo. The folder's config.json points its price
+ * writes nothing into the repo, with the output/csv/ and output/json/
+ * folders the repo's top keeps, unless a test names others. The folder's
+ * config.json points its price
  * lookup at a stand-in GeckoTerminal, and --rpc-url points it at a stand-in
  * X1 endpoint, so the run asks nothing outside the computer.
  */
@@ -16,6 +18,8 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse/sync";
+import { ANALYTICS_CSV } from "../../csvWriter.js";
+import { ANALYTICS_JSON, FULL_JSON } from "../../jsonWriter.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -62,6 +66,7 @@ function readJson(file) {
  * @param {Object} [run.config={}] - Settings for the folder's config.json beyond the stand-in GeckoTerminal's url
  * @param {string} [run.configText] - The folder's config.json, written as given in place of the settings, for a file that is not JSON
  * @param {number} [run.timeoutMs=0] - How long the run may take before it is stopped, in milliseconds; 0 for no limit
+ * @param {string[]} [run.folders=["output/csv", "output/json"]] - The folders made in the folder it runs in, as the repo's top keeps them
  * @returns {Promise<{code: number, killed: boolean, stdout: string, stderr: string, rows: ?Array<Object>,
  *   analytics: ?Array<Object>, json: ?Object, analyticsJson: ?Array<Object>}>} How it ended, whether it was
  *   stopped for taking too long, and what it wrote
@@ -73,11 +78,14 @@ export async function runScript({
   config = {},
   configText,
   timeoutMs = 0,
+  folders = ["output/csv", "output/json"],
 }) {
   const dir = fs.mkdtempSync(
     path.join(os.tmpdir(), "x1-validator-analytics-test-"),
   );
   try {
+    for (const folder of folders)
+      fs.mkdirSync(path.join(dir, folder), { recursive: true });
     fs.writeFileSync(
       path.join(dir, "config.json"),
       configText ??
@@ -115,9 +123,9 @@ export async function runScript({
     return {
       ...ended,
       rows: readCsv(output),
-      analytics: readCsv(path.join(dir, "xnt_rewards_analytics.csv")),
-      json: readJson(path.join(dir, "xnt_rewards.json")),
-      analyticsJson: readJson(path.join(dir, "xnt_rewards_analytics.json")),
+      analytics: readCsv(path.join(dir, ANALYTICS_CSV)),
+      json: readJson(path.join(dir, FULL_JSON)),
+      analyticsJson: readJson(path.join(dir, ANALYTICS_JSON)),
     };
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });

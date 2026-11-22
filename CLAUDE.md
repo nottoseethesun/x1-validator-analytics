@@ -43,7 +43,14 @@ The programs a reader runs from a terminal are in `bin/`: the script,
 `bin/fetch-total-validator-earnings.js`, the key manager and
 `unlock-api-keys.sh`. The modules the script uses stay at the repo's
 top. The script reads `config.json` from the folder it runs in, as
-before.
+before, and writes its reports in that folder's `output/`: its CSV files
+in `output/csv/` and, with `--json`, its JSON in `output/json/`. Git keeps
+each folder by its `.gitkeep`, an empty file, and ignores everything else
+in it, as the format check and the secret scan do, since the reports hold
+the owner's data and the repo is public. A run checks that the folder of
+each file it will write exists before it asks the chain anything. A test
+runs the script in a temp folder of its own, so it never writes in the
+repo's `output/`.
 
 ## Keys
 
@@ -71,7 +78,11 @@ settings: Ajv, an npm package that checks JSON against a schema, on draft
 2020-12, strict. A file that is not JSON, a key the schema does not name,
 or a value of the wrong kind stops the run, with every problem listed, one
 line each; a value is refused, never corrected. A folder without
-`config.json` gives the defaults, with a notice. The schema names only the
+`config.json` gives the defaults, with a notice. `config-example.json`,
+beside it, which git keeps and never ignores, holds the same settings as
+the committed `config.json`, the repo's defaults; no program reads it,
+and crypto-price-fetchers' `configExampleProblems`, in
+`test/repo-checks.test.js`, holds the two to each other. The schema names only the
 keys the script reads, and `apiKeys`, which the key store reads; a key is
 added to it with the owner's go-ahead.
 
@@ -178,8 +189,9 @@ GeckoTerminal served locally. `test/README.md` lists them.
 crypto-price-fetchers' checks (`crypto-price-fetchers/lib/repo-checks`):
 every EVM address in EIP-55's form, every npm target named in
 `docs/project-commands.md`, every test file and helper named in the
-docs, and every link and path in a doc pointing at a file, folder or
-heading the repo keeps.
+docs, every link and path in a doc pointing at a file, folder or heading
+the repo keeps, and a `config-example.json` beside `config.json`, holding
+what it holds.
 
 ```bash
 npm ci

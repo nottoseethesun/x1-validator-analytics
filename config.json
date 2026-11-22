@@ -2,7 +2,7 @@
   "rpcUrl": "https://rpc.mainnet.x1.xyz",
   "requestTimeoutSeconds": 30,
   "liquidityPoolAddress": "CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR",
-  "outputFile": "xnt_rewards_with_prices.csv",
+  "outputFile": "output/csv/xnt_rewards_with_prices.csv",
   "verbose": false,
   "epochs": null,
   "apiKeys": []

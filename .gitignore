@@ -3,13 +3,11 @@
 api-keys.json
 api-keys.json.tmp
 
-# Local app
-test-output.csv
-xnt_rewards_analytics.csv
-xnt_rewards_with_prices.csv
-xnt_rewards.json
-xnt_rewards_analytics.json
-
+# The owner's own files: those the script writes in its output/ folder,
+# by kind (output/csv/, output/json/). Git keeps each folder by its
+# .gitkeep, an empty file, and nothing else in it.
+/output/*/*
+!.gitkeep
 
 # Logs
 logs

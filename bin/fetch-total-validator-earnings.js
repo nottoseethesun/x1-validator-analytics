@@ -29,8 +29,11 @@
  *   warning; it never gets a stand-in price, and the USD totals leave it out.
  * - Main CSV includes "Cumulative XNT" and "Cumulative USD" running totals.
  * - Progress bar shown in quiet mode for long runs.
- * - Generates separate analytics CSV (xnt_rewards_analytics.csv).
- * - Optional JSON export (xnt_rewards.json) includes metadata, summary, and full rewards array.
+ * - Generates separate analytics CSV (output/csv/xnt_rewards_analytics.csv).
+ * - Optional JSON export (output/json/xnt_rewards.json) includes metadata, summary, and full rewards array.
+ * - Every file goes in output/csv/ or output/json/ of the folder the script runs in, the repo's
+ *   top, where git keeps nothing but the folders; the run checks that each folder it will write
+ *   in exists before it asks the chain anything.
  * - CSV files include UTF-8 BOM for correct opening in LibreOffice/Excel.
  * - A failed query in epochs 0 to 15 is expected: X1's chain was rolled back early in its life, and its
  *   endpoint cannot give the rewards of some of those epochs, epoch 15 among them.
@@ -54,8 +57,12 @@ import { fetchWithinTimeLimit } from "crypto-price-fetchers/lib/time-limited-fet
 import moment from "moment";
 import { DEFAULTS, loadConfig } from "../configLoader.js";
 import { PUBLIC_KEY, PUBLIC_KEY_FORMATS } from "../public-key.js";
-import { writeMainCsv, writeAnalyticsCsv } from "../csvWriter.js";
-import { writeJsonExport } from "../jsonWriter.js";
+import {
+  ANALYTICS_CSV,
+  writeMainCsv,
+  writeAnalyticsCsv,
+} from "../csvWriter.js";
+import { ANALYTICS_JSON, FULL_JSON, writeJsonExport } from "../jsonWriter.js";
 import { formatXnt } from "../xnt-amount.js";
 import { geckoTerminalSource, priceTimes } from "../xnt-price.js";
 import { rewardRows } from "../rewards.js";
@@ -118,7 +125,7 @@ Examples:
     $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account>
   The last 20 epochs only, with each step logged:
     $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
-  Every reward, with the JSON files too, in the folder it runs in:
+  Every reward, with the JSON files too, in output/json/:
     $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
   The same first run, through npm:
     $ npm start -- --vote-pubkey <vote-account>
@@ -128,7 +135,8 @@ Exit codes:
      query that failed is skipped, and the summary counts it, as
      unexpected outside epochs 0 to 15
   1  an option was wrong or missing, config.json was refused, the folder
-     of --output does not exist, the vote account was not found, another
+     of --output, output/csv/, or, with --json, output/json/ does not
+     exist, the vote account was not found, another
      request to the chain failed, the chain gave no block time for a
      reward, a file could not be written, or the program reading the
      output stopped reading before the files were written`;
@@ -158,8 +166,8 @@ function parseArguments(config, argv = process.argv) {
     .name("fetch-total-validator-earnings")
     .description(
       "Reads every inflation reward an X1 vote account received, prices each in USD at its own time, " +
-        "and writes them to a CSV file with running totals, and a summary to xnt_rewards_analytics.csv, " +
-        "in the folder it runs in.",
+        "and writes them to a CSV file with running totals, and a summary to " +
+        `${ANALYTICS_CSV}, in the folder it runs in.`,
     )
     .requiredOption(
       "--vote-pubkey <pubkey>",
@@ -194,7 +202,7 @@ function parseArguments(config, argv = process.argv) {
     )
     .option(
       "--json",
-      "also write all of it as JSON, to xnt_rewards.json, and the summary to xnt_rewards_analytics.json, in the folder it runs in",
+      `also write all of it as JSON, to ${FULL_JSON}, and the summary to ${ANALYTICS_JSON}, in the folder it runs in`,
       false,
     )
     .addHelpText("after", HELP_AFTER)
@@ -554,6 +562,41 @@ function printSummary(summary) {
 }
 
 /**
+ * Whether a folder exists.
+ *
+ * @param {string} folder - The folder
+ * @returns {boolean} Whether it does
+ */
+function folderExists(folder) {
+  return fs.existsSync(folder) && fs.statSync(folder).isDirectory();
+}
+
+/**
+ * Why the run cannot write one of its files, before it asks the chain
+ * anything: the first folder of a file it will write that does not exist,
+ * --output's, then output/csv/'s, for the summary, then, with --json,
+ * output/json/'s.
+ *
+ * @param {{output: string, json: boolean}} argv - The options
+ * @returns {?string} The message, or null when every folder exists
+ */
+function missingOutputFolder(argv) {
+  const outputFolder = path.dirname(path.resolve(argv.output));
+  if (!folderExists(outputFolder))
+    return `option '-o, --output <file>' argument '${argv.output}' is invalid: its folder, ${outputFolder}, does not exist.`;
+  const kept = [
+    [ANALYTICS_CSV, "the summary"],
+    ...(argv.json ? [[FULL_JSON, "--json's files"]] : []),
+  ];
+  for (const [file, what] of kept) {
+    const folder = path.dirname(path.resolve(file));
+    if (!folderExists(folder))
+      return `The run writes ${what} to ${file}, in the folder it runs in, and its folder, ${folder}, does not exist: run it in the repo's top folder, which keeps output/csv/ and output/json/.`;
+  }
+  return null;
+}
+
+/**
  * Main entry point: orchestrates the entire process.
  */
 async function main() {
@@ -567,11 +610,8 @@ async function main() {
   }
   const argv = parseArguments(config);
   if (refused !== null) throw refused;
-  const outputFolder = path.dirname(path.resolve(argv.output));
-  if (!fs.existsSync(outputFolder) || !fs.statSync(outputFolder).isDirectory())
-    throw new Error(
-      `option '-o, --output <file>' argument '${argv.output}' is invalid: its folder, ${outputFolder}, does not exist.`,
-    );
+  const missing = missingOutputFolder(argv);
+  if (missing !== null) throw new Error(missing);
   // endQuietlyWhenOutputCloses ends a run whose output's reader stops
   // reading, as head does, with the exit code set so far: 1 until the
   // files are written, or the account is found to have no rewards
