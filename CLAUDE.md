@@ -163,8 +163,10 @@ checked over the full history on 2026-11-10.
 
 ## Known bugs
 
-None is known. When one is found, it gets a test in
-`test/known-bugs.test.js`, declared with `knownBug`
+One is known: a run with `--epochs` says it processes the epochs from the
+last completed one back to epoch 0, then reads only as many as `--epochs`
+names. When one is found, it gets a test in `test/known-bugs.test.js`,
+declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
 same change, among the tests of the code it is about.
