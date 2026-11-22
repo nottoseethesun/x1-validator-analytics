@@ -185,7 +185,11 @@ validator's rewards over the full history, checked on 2026-11-10.
 
 ## Known bugs
 
-None is known. When one is found, it gets a test in
+One is known, with its test in `test/known-bugs.test.js`: `config.json`'s
+schema takes a `requestTimeoutSeconds` Node's timers cannot keep, so a
+fraction of a second stops the run with Node's own error, and more than
+2147483 seconds ends every request at once.
+When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
