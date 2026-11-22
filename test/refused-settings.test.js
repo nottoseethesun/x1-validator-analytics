@@ -9,6 +9,7 @@
  * fault, before it asks the chain anything: a typed value meets its
  * option's parser, and config.json meets its JSON Schema
  * (`configLoader.js`), whose kinds of value the parsers are made from.
+ * `--help` still answers, with exit code 0, when config.json is refused.
  */
 
 import { describe, it } from "node:test";
@@ -160,5 +161,28 @@ describe("fetch-total-validator-earnings.js, with a config.json it cannot take",
       run.stderr,
     );
     assert.doesNotMatch(run.stderr, /ECONNREFUSED/);
+  });
+});
+
+describe("fetch-total-validator-earnings.js, an empty --output and --help", () => {
+  it("refuses an empty --output as it parses, naming the option, before it asks anything", async () => {
+    const run = await runScript({
+      rpcUrl: "http://127.0.0.1:1",
+      geckoTerminalUrl: "http://127.0.0.1:1",
+      args: ["--output", ""],
+    });
+    assert.equal(run.code, 1);
+    assert.match(run.stderr, /argument '' is invalid/);
+    assert.ok(run.stderr.includes("--output <file>"), run.stderr);
+  });
+
+  it("answers --help with exit code 0 in a folder whose config.json is refused", async () => {
+    const run = await runScript({
+      rpcUrl: "http://127.0.0.1:1",
+      config: { requestTimeoutSeconds: 0 },
+      args: ["--help"],
+    });
+    assert.equal(run.code, 0);
+    assert.match(run.stdout, /^Usage: /m);
   });
 });

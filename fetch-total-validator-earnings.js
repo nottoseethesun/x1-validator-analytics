@@ -47,7 +47,7 @@ import {
 } from "crypto-price-fetchers/lib/settings-schema";
 import { fetchWithinTimeLimit } from "crypto-price-fetchers/lib/time-limited-fetch";
 import moment from "moment";
-import { loadConfig } from "./configLoader.js";
+import { DEFAULTS, loadConfig } from "./configLoader.js";
 import { PUBLIC_KEY, PUBLIC_KEY_FORMATS } from "./public-key.js";
 import { writeMainCsv, writeAnalyticsCsv } from "./csvWriter.js";
 import { writeJsonExport } from "./jsonWriter.js";
@@ -101,7 +101,9 @@ async function lookUpPrices(rewards, source) {
 /** What the help says after the options: where the defaults come from, examples, exit codes. */
 const HELP_AFTER = `
 The defaults of --rpc-url, --liquidity-pool-address, --output, --verbose
-and --epochs come from config.json in the folder the script runs in.
+and --epochs come from config.json in the folder the script runs in. When
+config.json is refused, --help shows the defaults written in the script
+(configLoader.js), and any other run stops on the file's problems.
 
 Examples:
   Every reward of a vote account, from its first epoch to the last one
@@ -128,6 +130,7 @@ const PARSE = Object.freeze({
   publicKey: kindParser(PUBLIC_KEY, (text) => text, PUBLIC_KEY_FORMATS),
   url: kindParser(KINDS.url),
   epochs: kindParser(KINDS.wholeAbove0, asWholeNumber),
+  output: kindParser(KINDS.text),
 });
 
 /**
@@ -164,6 +167,7 @@ function parseArguments(config, argv = process.argv) {
     .option(
       "-o, --output <file>",
       "the main CSV file to write",
+      PARSE.output,
       config.outputFile,
     )
     .option("-v, --verbose", "log each step", config.verbose)
@@ -285,6 +289,64 @@ async function getCurrentEpoch(connection) {
   return Number(epochInfo.epoch);
 }
 
+/** How many more times a failed getBlockTime is asked. */
+const BLOCK_TIME_RETRIES = 2;
+
+/** The wait before each new ask of a failed getBlockTime, in milliseconds. */
+const BLOCK_TIME_RETRY_WAIT_MS = 2000;
+
+/**
+ * The time of a reward's block, in unix seconds, from the chain. A failed
+ * request is asked again up to BLOCK_TIME_RETRIES times,
+ * BLOCK_TIME_RETRY_WAIT_MS apart, so one passing error does not end a long
+ * run. web3.js gives a block time as a BigInt of unix seconds, or null when
+ * it has none.
+ *
+ * @param {Connection} connection - The X1 connection
+ * @param {Object} reward - The reward, as getInflationReward gives it
+ * @param {number} epoch - The reward's epoch, for the messages
+ * @param {boolean} verbose - Whether to log each step
+ * @returns {Promise<number>} The block's time, in unix seconds
+ * @throws {Error} When the reward names no slot, the chain gives no block time for it, or every request fails, naming the epoch, and the slot when there is one
+ */
+async function rewardBlockSeconds(connection, reward, epoch, verbose) {
+  const slot = reward.effectiveSlot;
+  if (slot === undefined || slot === null) {
+    throw new Error(
+      `The chain names no slot for the reward of epoch ${epoch}, so its time is unknown`,
+    );
+  }
+  for (let attempt = 0; ; attempt++) {
+    let blockTime;
+    try {
+      blockTime = await connection.getBlockTime(slot);
+    } catch (e) {
+      if (attempt >= BLOCK_TIME_RETRIES) {
+        throw new Error(
+          `getBlockTime failed ${attempt + 1} times for slot ${slot}, the reward of epoch ${epoch}: ${e.message}`,
+          { cause: e },
+        );
+      }
+      if (verbose)
+        console.warn(
+          `getBlockTime failed for slot ${slot} in epoch ${epoch}: ${e.message}; asking again`,
+        );
+      await new Promise((resolve) =>
+        setTimeout(resolve, BLOCK_TIME_RETRY_WAIT_MS),
+      );
+      continue;
+    }
+    if (blockTime === null) {
+      throw new Error(
+        `The chain gives no block time for slot ${slot}, the reward of epoch ${epoch}`,
+      );
+    }
+    if (verbose)
+      console.log(`Using real block time for epoch ${epoch}: ${blockTime}`);
+    return Number(blockTime);
+  }
+}
+
 /**
  * Fetches reward data for a single epoch with accurate timestamp using effectiveSlot.
  *
@@ -292,18 +354,12 @@ async function getCurrentEpoch(connection) {
  * @param {PublicKey} votePubkey - Vote account public key.
  * @param {number} epoch - Epoch number to query.
  * @param {boolean} verbose - Whether to log raw response and errors.
- * @param {number} currentEpoch - Current epoch (for fallback time approximation).
  * @returns {Promise<{outcome: "reward", reward: {epoch: number, timestamp: number, lamports: bigint}}|{outcome: "none"}|{outcome: "failed"}>}
  *   The reward, with its time in unix seconds and its amount in lamports; or `none` when the endpoint
  *   answered with no reward for the account, or a reward of 0; or `failed` when the query failed.
+ * @throws {Error} When the reward's block time cannot be had (`rewardBlockSeconds`)
  */
-async function fetchSingleEpochReward(
-  connection,
-  votePubkey,
-  epoch,
-  verbose,
-  currentEpoch,
-) {
+async function fetchSingleEpochReward(connection, votePubkey, epoch, verbose) {
   if (verbose) console.log(`Querying inflation reward for epoch ${epoch}...`);
 
   let inflationReward;
@@ -330,33 +386,12 @@ async function fetchSingleEpochReward(
   const reward = inflationReward?.[0] ?? null;
   if (reward === null || !(reward.amount > 0)) return { outcome: "none" };
 
-  let rewardTimestamp;
-
-  // Try to get real block time from effectiveSlot. web3.js gives a block
-  // time as a BigInt of unix seconds, or null when it has none.
-  if (reward.effectiveSlot !== undefined) {
-    try {
-      const blockTime = await connection.getBlockTime(reward.effectiveSlot);
-      rewardTimestamp = blockTime === null ? null : Number(blockTime);
-      if (verbose && rewardTimestamp) {
-        console.log(
-          `Using real block time for epoch ${epoch}: ${rewardTimestamp}`,
-        );
-      }
-    } catch (e) {
-      if (verbose)
-        console.warn(
-          `getBlockTime failed for slot ${reward.effectiveSlot} in epoch ${epoch}: ${e.message}`,
-        );
-    }
-  }
-
-  // Fallback to approximation if no slot or getBlockTime failed
-  if (!rewardTimestamp) {
-    rewardTimestamp =
-      Math.floor(Date.now() / 1000) - (currentEpoch - epoch) * 24 * 60 * 60;
-    if (verbose) console.log(`Using fallback timestamp for epoch ${epoch}`);
-  }
+  const rewardTimestamp = await rewardBlockSeconds(
+    connection,
+    reward,
+    epoch,
+    verbose,
+  );
 
   return {
     outcome: "reward",
@@ -430,7 +465,6 @@ async function fetchRewardsForEpochs(
       votePubkey,
       epoch,
       verbose,
-      currentEpoch,
     );
     outcomes.push({ epoch, outcome: found.outcome });
 
@@ -504,8 +538,16 @@ function printSummary(summary) {
  * Main entry point: orchestrates the entire process.
  */
 async function main() {
-  const config = loadConfig();
+  let config;
+  let refused = null;
+  try {
+    config = loadConfig();
+  } catch (error) {
+    refused = error;
+    config = { ...DEFAULTS };
+  }
   const argv = parseArguments(config);
+  if (refused !== null) throw refused;
 
   const connection = createConnection(
     argv.rpcUrl,

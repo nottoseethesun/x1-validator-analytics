@@ -64,7 +64,10 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 2. The script finds the vote account and the current epoch, then asks the
    endpoint for the account's inflation reward in each epoch, from the last
    completed one back to epoch 0, or as many as asked. A reward's time is
-   the block time of its slot. The endpoint answers an epoch with the
+   the block time of its slot. A failed request for it is asked again
+   twice, 2 seconds apart; when the chain still gives none, or the reward
+   names no slot, the run stops with exit code 1, naming the epoch, so no
+   row carries an estimated date or price. The endpoint answers an epoch with the
    account's reward, or with none, as it does for an epoch before the
    account began or one it missed; or the query fails, and the epoch is
    skipped. Each outcome is counted. X1's chain was rolled back early in

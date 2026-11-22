@@ -172,12 +172,7 @@ deleted. The steps from a branch to `main` are LP Ranger's eight, in its
 
 ## Known Bugs
 
-Three are known. When the chain gives no block time for a reward, the
-script estimates the reward's date, 24 hours an epoch back from now, says
-so only with `--verbose`, and ends with exit code 0, so the date and its
-price are wrong. `--output` has no parser, so an empty name passes and the
-run fails after asking the chain. In a folder whose `config.json` is
-refused, `--help` prints only the settings' problems and exits with 1. A bug found gets a test in `test/known-bugs.test.js`,
+None is known. A bug found gets a test in `test/known-bugs.test.js`,
 declared with `knownBug` (`test/helpers/known-bug.js`), so the test passes
 while the bug is present. The bug's fix makes its test fail; the same change
 declares the test with `it`, among the tests of the code it is about.
