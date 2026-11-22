@@ -20,6 +20,9 @@ import {
   priceTimes,
 } from "../xnt-price.js";
 import {
+  HIGH_SHARE,
+  LOW_SHARE,
+  OPEN_SHARE,
   POOL,
   USDC_X,
   XNT,
@@ -50,7 +53,8 @@ function candlesFrom(count) {
 
 /**
  * The candles as the client gives them, from the stand-in's: [open time,
- * open, high, low, close, volume], each price the candle's own.
+ * open, high, low, close, volume], each closing at its own price, with the
+ * open, high and low the stand-in gives apart from it.
  *
  * @param {Array<Array<number>>} candles - Candles, as [open time, price]
  * @returns {Array<Array<number>>} The client's candles
@@ -58,9 +62,9 @@ function candlesFrom(count) {
 function asGiven(candles) {
   return candles.map(([open, price]) => [
     open,
-    price,
-    price,
-    price,
+    price * OPEN_SHARE,
+    price * HIGH_SHARE,
+    price * LOW_SHARE,
     price,
     100,
   ]);
