@@ -8,8 +8,8 @@
  * - writeAnalyticsCsv: Writes summary metrics CSV.
  *
  * All CSV files include a UTF-8 BOM (U+FEFF) for correct opening in LibreOffice/Excel,
- * plus a trailing newline for POSIX compliance. A reward with no XNT price has
- * empty price and value cells.
+ * and end with the newline csv-stringify writes after the last row. A reward with
+ * no XNT price has empty price and value cells.
  */
 
 import { stringify } from "csv-stringify/sync";
@@ -46,7 +46,7 @@ export function writeMainCsv(rows, outputPath) {
   ];
 
   const csvContent = stringify(data);
-  fs.writeFileSync(outputPath, "﻿" + csvContent + "\n", "utf8");
+  fs.writeFileSync(outputPath, "﻿" + csvContent, "utf8");
 
   console.log(
     `Main CSV written to: ${outputPath} (${rows.length} reward entries)`,
@@ -67,7 +67,7 @@ export function writeAnalyticsCsv(
     ["Metric", "Value"],
     ...analyticsMetrics(summary),
   ]);
-  fs.writeFileSync(analyticsPath, "﻿" + csvContent + "\n", "utf8");
+  fs.writeFileSync(analyticsPath, "﻿" + csvContent, "utf8");
 
   console.log(`Analytics summary CSV written to: ${analyticsPath}`);
 }

@@ -162,10 +162,8 @@ checked over the full history on 2026-11-10.
 
 ## Known bugs
 
-One is known: each CSV file the script writes ends with an empty row,
-since csv-stringify, the package that writes the rows, ends the last row
-with a newline, and the writers in `csvWriter.js` add another. When one is
-found, it gets a test in `test/known-bugs.test.js`, declared with `knownBug`
+None is known. When one is found, it gets a test in
+`test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
 same change, among the tests of the code it is about.
