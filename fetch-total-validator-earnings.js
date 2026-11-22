@@ -38,12 +38,17 @@
  */
 
 import { Connection, PublicKey } from "@solana/web3.js";
-import { Command, InvalidArgumentError } from "commander";
+import { Command } from "commander";
 import { endQuietlyWhenOutputCloses } from "crypto-price-fetchers/lib/closed-output";
-import { isHttpUrl } from "crypto-price-fetchers/lib/http-url";
+import {
+  asWholeNumber,
+  KINDS,
+  kindParser,
+} from "crypto-price-fetchers/lib/settings-schema";
 import { fetchWithinTimeLimit } from "crypto-price-fetchers/lib/time-limited-fetch";
 import moment from "moment";
 import { loadConfig } from "./configLoader.js";
+import { PUBLIC_KEY, PUBLIC_KEY_FORMATS } from "./public-key.js";
 import { writeMainCsv, writeAnalyticsCsv } from "./csvWriter.js";
 import { writeJsonExport } from "./jsonWriter.js";
 import { formatXnt } from "./xnt-amount.js";
@@ -114,66 +119,16 @@ Exit codes:
   1  an option was wrong or missing, or a request to the chain failed`;
 
 /**
- * Checks that an option is a whole number above 0.
- *
- * @param {string} value - The option's text
- * @returns {number} The number
- * @throws {InvalidArgumentError} When it is not a whole number above 0
+ * The parsers of the options that take a value, made from the kinds of
+ * value `config.json`'s schema gives the same settings (`configLoader.js`),
+ * with crypto-price-fetchers' `kindParser`, so a typed value and the same
+ * value in the file meet one rule. A refusal names the option.
  */
-function positiveWholeNumber(value) {
-  const number = Number(value);
-  if (!Number.isInteger(number) || number < 1) {
-    throw new InvalidArgumentError("It is not a whole number above 0.");
-  }
-  return number;
-}
-
-/**
- * A public key in base58, as X1 writes a vote account's or a pool's
- * address: 32 bytes.
- *
- * @param {string} value - The text
- * @returns {?string} The key, in base58, or null when the text is none
- */
-function asPublicKey(value) {
-  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(value)) return null;
-  try {
-    return new PublicKey(value).toBase58();
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Checks that an option is a public key, as X1 writes an address.
- *
- * @param {string} value - The option's text
- * @returns {string} The key, in base58
- * @throws {InvalidArgumentError} When it is no public key
- */
-function publicKey(value) {
-  const key = asPublicKey(value);
-  if (key === null) {
-    throw new InvalidArgumentError(
-      "It is not a public key, which is 32 bytes written in base58.",
-    );
-  }
-  return key;
-}
-
-/**
- * Checks that an option is an http or https url.
- *
- * @param {string} value - The option's text
- * @returns {string} The url
- * @throws {InvalidArgumentError} When it is not one
- */
-function httpUrl(value) {
-  if (!isHttpUrl(value)) {
-    throw new InvalidArgumentError("It is not an http or https url.");
-  }
-  return value;
-}
+const PARSE = Object.freeze({
+  publicKey: kindParser(PUBLIC_KEY, (text) => text, PUBLIC_KEY_FORMATS),
+  url: kindParser(KINDS.url),
+  epochs: kindParser(KINDS.wholeAbove0, asWholeNumber),
+});
 
 /**
  * Reads the command line, declared with commander.
@@ -192,18 +147,18 @@ function parseArguments(config, argv = process.argv) {
     .requiredOption(
       "--vote-pubkey <pubkey>",
       "the vote account's public key",
-      publicKey,
+      PARSE.publicKey,
     )
     .option(
       "--rpc-url <url>",
       "the X1 rpc endpoint to ask",
-      httpUrl,
+      PARSE.url,
       config.rpcUrl,
     )
     .option(
       "--liquidity-pool-address <address>",
       "the pool whose hourly candles on GeckoTerminal price XNT",
-      publicKey,
+      PARSE.publicKey,
       config.liquidityPoolAddress,
     )
     .option(
@@ -215,7 +170,7 @@ function parseArguments(config, argv = process.argv) {
     .option(
       "-n, --epochs <count>",
       "how many epochs to read, back from the last one completed; every epoch when unset",
-      positiveWholeNumber,
+      PARSE.epochs,
       config.epochs,
     )
     .option(
@@ -234,16 +189,10 @@ function parseArguments(config, argv = process.argv) {
  * limit of its own: crypto-price-fetchers' `fetchWithinTimeLimit`, which
  * names the endpoint when the time runs out.
  *
- * @param {number} limitSeconds - How long a request may take, in seconds
+ * @param {number} limitSeconds - How long a request may take, in seconds: config.json's requestTimeoutSeconds, a number above 0, as its schema holds it
  * @returns {function(string, Object=): Promise<Response>} The fetch
- * @throws {Error} When the limit is not a number of seconds above 0
  */
 function fetchWithTimeLimit(limitSeconds) {
-  if (typeof limitSeconds !== "number" || !(limitSeconds > 0)) {
-    throw new Error(
-      `config.json's requestTimeoutSeconds must be a number of seconds above 0, not ${JSON.stringify(limitSeconds)}`,
-    );
-  }
   return (url, options) =>
     fetchWithinTimeLimit(url, options, {
       timeoutMs: limitSeconds * 1000,

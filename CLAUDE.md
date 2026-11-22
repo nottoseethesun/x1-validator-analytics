@@ -47,6 +47,24 @@ copy of crypto-price-fetchers', which a test holds it to; a change to it is
 made there. A key is never a setting in a file git keeps, nor a command-line
 argument.
 
+## Settings
+
+The script's settings are `config.json`, in the folder it runs in, over
+the defaults in `configLoader.js`. Before the script takes a setting,
+crypto-price-fetchers' `readSettingsFile`
+(`crypto-price-fetchers/lib/settings-file`) checks the file against its
+JSON Schema, `SETTINGS_SCHEMA` in `configLoader.js`, a description in JSON
+of the keys the file may hold and the kind of value each takes, built from
+crypto-price-fetchers' kinds of value
+(`crypto-price-fetchers/lib/settings-schema`), as LP Ranger checks its
+settings: Ajv, an npm package that checks JSON against a schema, on draft
+2020-12, strict. A file that is not JSON, a key the schema does not name,
+or a value of the wrong kind stops the run, with every problem listed, one
+line each; a value is refused, never corrected. A folder without
+`config.json` gives the defaults, with a notice. The schema names only the
+keys the script reads, and `apiKeys`, which the key store reads; a key is
+added to it with the owner's go-ahead.
+
 ## crypto-price-fetchers
 
 `package.json` installs crypto-price-fetchers from GitHub, following its
@@ -85,10 +103,12 @@ exit codes. An npm target that runs one passes the flag through, as
 that parses command lines, so the options its help lists come from the
 declaration the program parses; the examples and exit codes go in the
 help's closing text (`addHelpText("after", …)`). Each option's value is
-checked as commander parses it, with `InvalidArgumentError`, so a mistake
-names its option before anything is asked: a public key in base58, or an
-http or https url, by crypto-price-fetchers' `isHttpUrl`
-(`crypto-price-fetchers/lib/http-url`). Each entry point calls
+checked as commander parses it, so a mistake names its option before
+anything is asked: its parser is made, with crypto-price-fetchers'
+`kindParser`, from the kind of value `config.json`'s schema gives the same
+setting (Settings, below), a public key in base58 (`public-key.js`), an
+http or https url, or a whole number above 0, so a typed value and a value
+in the file meet one rule. Each entry point calls
 crypto-price-fetchers' `endQuietlyWhenOutputCloses`
 (`crypto-price-fetchers/lib/closed-output`) before it starts, so a command
 line whose output is piped into a program that stops reading, such as
@@ -163,11 +183,8 @@ checked over the full history on 2026-11-10.
 
 ## Known bugs
 
-Two are known. A `config.json` that is not JSON is passed over, with a
-warning, and the run goes on with the defaults. And `config.json`'s
-`epochs`, the default of `--epochs`, is not checked as a typed `--epochs`
-is: 0 or -3 reads one epoch, and "two" every epoch. When one is found, it
-gets a test in `test/known-bugs.test.js`, declared with `knownBug`
+None is known. When one is found, it gets a test in
+`test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
 same change, among the tests of the code it is about.

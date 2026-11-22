@@ -61,7 +61,7 @@ settings; the keys and the reports stay on the owner's computer.
 
 | File | In git | What it holds |
 | ---- | ------ | ------------- |
-| `config.json` | yes | The script's settings, over the defaults in `configLoader.js`, and the services whose keys the programs send, under `apiKeys`: none today. |
+| `config.json` | yes | The script's settings, over the defaults in `configLoader.js`, and the services whose keys the programs send, under `apiKeys`: none today. Checked against its JSON Schema, `SETTINGS_SCHEMA` in `configLoader.js`, before the script takes a setting. |
 | `api-keys.json` | no | Api keys, encrypted with the owner's password, should a service that takes one be added. |
 | `xnt_rewards_with_prices.csv`, `xnt_rewards_analytics.csv` | no | The reports, unless `--output` names another file. |
 | `xnt_rewards.json`, `xnt_rewards_analytics.json` | no | The reports as JSON, with `--json`. |
@@ -172,11 +172,7 @@ deleted. The steps from a branch to `main` are LP Ranger's eight, in its
 
 ## Known Bugs
 
-Two are known. A `config.json` that is not JSON is passed over, with a
-warning, and the run goes on with the defaults. And `config.json`'s
-`epochs`, the default of `--epochs`, is not checked as a typed `--epochs`
-is: 0 or -3 reads one epoch, and "two" every epoch. A bug found gets a test
-in `test/known-bugs.test.js`, declared with `knownBug`
-(`test/helpers/known-bug.js`), so the test passes
+None is known. A bug found gets a test in `test/known-bugs.test.js`,
+declared with `knownBug` (`test/helpers/known-bug.js`), so the test passes
 while the bug is present. The bug's fix makes its test fail; the same change
 declares the test with `it`, among the tests of the code it is about.

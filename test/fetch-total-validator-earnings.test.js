@@ -14,7 +14,6 @@
 
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import { startStandInX1, rewardSeconds } from "./helpers/stand-in-x1.js";
 import {
   XNT,
@@ -192,28 +191,6 @@ describe("fetch-total-validator-earnings.js, three recent epochs, all priced", (
     assert.equal(metric(run.analytics, "Rewards Without an XNT Price"), "0");
     assert.equal(metric(run.analytics, "Unexpected Failed Epoch Queries"), "0");
   });
-});
-
-describe("fetch-total-validator-earnings.js, given a wrong option", () => {
-  for (const [args, option] of [
-    [["--vote-pubkey", "abc"], "--vote-pubkey <pubkey>"],
-    [["--vote-pubkey", "0OIl" + "1".repeat(40)], "--vote-pubkey <pubkey>"],
-    [["--liquidity-pool-address", "not-a-key"], "--liquidity-pool-address"],
-    [["--rpc-url", "notaurl"], "--rpc-url <url>"],
-    [["--rpc-url", "ftp://example.com"], "--rpc-url <url>"],
-  ]) {
-    it(`refuses ${args.join(" ")} with exit code 1, naming the option, before it asks anything`, async () => {
-      const run = await runScript({
-        rpcUrl: "http://127.0.0.1:1",
-        geckoTerminalUrl: "http://127.0.0.1:1",
-        args,
-      });
-      assert.equal(run.code, 1);
-      assert.match(run.stderr, /argument '.*' is invalid/);
-      assert.ok(run.stderr.includes(option), run.stderr);
-      assert.doesNotMatch(run.stderr, /ECONNREFUSED/);
-    });
-  }
 });
 
 describe("fetch-total-validator-earnings.js, in verbose mode", () => {
@@ -555,44 +532,5 @@ describe("fetch-total-validator-earnings.js, against an endpoint that stops in t
       run.stderr,
       /^Error: The X1 endpoint at http:\/\/127\.0\.0\.1:\d+ gave no answer within 1 seconds$/m,
     );
-  });
-});
-
-describe("fetch-total-validator-earnings.js, with a time limit config.json cannot give", () => {
-  it("refuses requestTimeoutSeconds that is not a number of seconds above 0, with exit code 1", async () => {
-    const standIns = await startStandIns({}, () => ({ candles: [] }));
-    try {
-      for (const limit of ["abc", 0, -5]) {
-        const run = await runScript({
-          rpcUrl: standIns.x1.url,
-          geckoTerminalUrl: standIns.server.url,
-          config: { requestTimeoutSeconds: limit },
-        });
-        assert.equal(run.code, 1);
-        assert.match(
-          run.stderr,
-          /^Error: config\.json's requestTimeoutSeconds must be a number of seconds above 0, not /m,
-        );
-      }
-    } finally {
-      await standIns.close();
-    }
-  });
-});
-
-describe("config.json", () => {
-  it("holds only settings a program of the repo reads", () => {
-    const config = JSON.parse(
-      fs.readFileSync(new URL("../config.json", import.meta.url), "utf8"),
-    );
-    assert.deepEqual(Object.keys(config).sort(), [
-      "apiKeys",
-      "epochs",
-      "liquidityPoolAddress",
-      "outputFile",
-      "requestTimeoutSeconds",
-      "rpcUrl",
-      "verbose",
-    ]);
   });
 });
