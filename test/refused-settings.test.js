@@ -71,10 +71,10 @@ describe("fetch-total-validator-earnings.js, given a wrong option", () => {
 });
 
 describe("fetch-total-validator-earnings.js, with a config.json it cannot take", () => {
-  it("refuses requestTimeoutSeconds that is not a number above 0, with exit code 1", async () => {
+  it("refuses requestTimeoutSeconds that is not a whole number of seconds from 1 to 2147483, with exit code 1", async () => {
     const standIns = await startStandIns();
     try {
-      for (const limit of ["abc", 0, -5]) {
+      for (const limit of ["abc", 0, -5, 2.01, 3000000]) {
         const run = await runScript({
           rpcUrl: standIns.x1.url,
           geckoTerminalUrl: standIns.server.url,
@@ -85,7 +85,7 @@ describe("fetch-total-validator-earnings.js, with a config.json it cannot take",
           run.stderr
             .split("\n")
             .includes(
-              `Error: config.json → requestTimeoutSeconds must be a number above 0; it is ${JSON.stringify(limit)}`,
+              `Error: config.json → requestTimeoutSeconds must be a whole number of seconds from 1 to 2147483, the longest Node's timers keep; it is ${JSON.stringify(limit)}`,
             ),
           run.stderr,
         );

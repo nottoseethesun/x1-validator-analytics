@@ -267,7 +267,7 @@ issues it, as on Solana.
 | Setting | What it sets | Default | Option that overrides it |
 | ------- | ------------ | ------- | ------------------------ |
 | `rpcUrl` | the X1 rpc endpoint to ask | `https://rpc.mainnet.x1.xyz` | `--rpc-url` |
-| `requestTimeoutSeconds` | how long each request to the X1 endpoint may take, its whole answer included | 30 | — |
+| `requestTimeoutSeconds` | how long each request to the X1 endpoint may take, its whole answer included: a whole number of seconds from 1 to 2147483, the longest time limit Node's timers keep | 30 | — |
 | `liquidityPoolAddress` | the pool whose hourly candles on GeckoTerminal price XNT | XDEX's WXNT / USDC.X, `CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR` | `--liquidity-pool-address` |
 | `xntTokenAddress` | the mint of wrapped XNT, one side of that pool | `So11111111111111111111111111111111111111112` | — |
 | `usdStablecoinAddress` | the mint of the USD stablecoin on the pool's other side | USDC.X, `B69chRzqzDCmdB5WYB8NRu5Yv5ZA95ABiZcdzCgGm9Tq` | — |
