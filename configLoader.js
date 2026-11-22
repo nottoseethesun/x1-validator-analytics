@@ -81,12 +81,16 @@ export const SETTINGS_SCHEMA = Object.freeze({
  * over the defaults.
  *
  * @param {string} [file='config.json'] - The settings file, which a test names
+ * @param {function(string): void} [warn] - Prints the notice that there is no settings file: the console's warning, unless a test reads it
  * @returns {Object} The settings
  * @throws {Error} When the file cannot be read, is not JSON, or has a problem the schema finds, every problem listed
  */
-export function loadConfig(file = SETTINGS_FILE) {
+export function loadConfig(
+  file = SETTINGS_FILE,
+  warn = (notice) => console.warn(notice),
+) {
   if (!fs.existsSync(file)) {
-    console.warn(`No ${file} in this folder: the run takes the defaults.`);
+    warn(`No ${file} in this folder: the run takes the defaults.`);
   }
   const own = readSettingsFile(file, {
     schema: SETTINGS_SCHEMA,
