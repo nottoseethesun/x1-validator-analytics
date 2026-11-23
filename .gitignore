@@ -5,8 +5,11 @@ api-keys.json.tmp
 
 # The owner's own files: those the script writes in its output/ folder,
 # by kind (output/csv/, output/json/). Git keeps each folder by its
-# .gitkeep, an empty file, and nothing else in it.
-/output/*/*
+# .gitkeep, an empty file, and nothing else in it: the first rule ignores
+# all output/ holds, at any depth; the second takes its folders back, so
+# git looks inside them; and !.gitkeep keeps each .gitkeep.
+/output/**
+!/output/**/
 !.gitkeep
 
 # Logs

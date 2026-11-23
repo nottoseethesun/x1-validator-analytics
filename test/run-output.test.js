@@ -97,8 +97,8 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
     }
   });
 
-  it("refuses an --output in a folder that does not exist before it asks the chain for any reward's time", async () => {
-    const asksBefore = x1.chain.blockTimeAsks;
+  it("refuses an --output in a folder that does not exist before it asks the chain anything", async () => {
+    const asksBefore = x1.chain.requests;
     const run = await runScript({
       rpcUrl: x1.url,
       geckoTerminalUrl: gecko.url,
@@ -106,11 +106,11 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
     });
     assert.equal(run.code, 1);
     assert.match(run.stderr, /--output/);
-    assert.equal(x1.chain.blockTimeAsks, asksBefore);
+    assert.equal(x1.chain.requests, asksBefore);
   });
 
-  it("refuses a run in a folder without output/csv/, where it writes the summary, before it asks the chain for any reward's time", async () => {
-    const asksBefore = x1.chain.blockTimeAsks;
+  it("refuses a run in a folder without output/csv/, where it writes the summary, before it asks the chain anything", async () => {
+    const asksBefore = x1.chain.requests;
     const run = await runScript({
       rpcUrl: x1.url,
       geckoTerminalUrl: gecko.url,
@@ -121,11 +121,11 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
       run.stderr,
       /writes the summary to output\/csv\/xnt_rewards_analytics\.csv, in the folder it runs in, and its folder, .*, does not exist/,
     );
-    assert.equal(x1.chain.blockTimeAsks, asksBefore);
+    assert.equal(x1.chain.requests, asksBefore);
   });
 
-  it("refuses a run with --json in a folder without output/json/ before it asks the chain for any reward's time", async () => {
-    const asksBefore = x1.chain.blockTimeAsks;
+  it("refuses a run with --json in a folder without output/json/ before it asks the chain anything", async () => {
+    const asksBefore = x1.chain.requests;
     const run = await runScript({
       rpcUrl: x1.url,
       geckoTerminalUrl: gecko.url,
@@ -137,7 +137,7 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
       run.stderr,
       /writes --json's files to output\/json\/xnt_rewards\.json, in the folder it runs in, and its folder, .*, does not exist/,
     );
-    assert.equal(x1.chain.blockTimeAsks, asksBefore);
+    assert.equal(x1.chain.requests, asksBefore);
   });
 
   it("counts its progress out of the epochs there are, when --epochs asks for more", async () => {
@@ -163,10 +163,10 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
     assert.match(run.stdout, /\(5\/5 epochs\)/);
   });
 
-  it("refuses an --output that is a folder, naming --output, before it asks the chain for any reward's time", async () => {
+  it("refuses an --output that is a folder, naming --output, before it asks the chain anything", async () => {
     const folder = fs.mkdtempSync(`${os.tmpdir()}/x1-output-folder-`);
     try {
-      const asksBefore = x1.chain.blockTimeAsks;
+      const asksBefore = x1.chain.requests;
       const run = await runScript({
         rpcUrl: x1.url,
         geckoTerminalUrl: gecko.url,
@@ -179,15 +179,15 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
         ),
         run.stderr,
       );
-      assert.equal(x1.chain.blockTimeAsks, asksBefore);
+      assert.equal(x1.chain.requests, asksBefore);
     } finally {
       fs.rmSync(folder, { recursive: true, force: true });
     }
   });
 
   describe("in /proc, which takes no new file", { skip: NO_PROC }, () => {
-    it("refuses an --output whose folder takes no new file, naming --output, before it asks the chain for any reward's time", async () => {
-      const asksBefore = x1.chain.blockTimeAsks;
+    it("refuses an --output whose folder takes no new file, naming --output, before it asks the chain anything", async () => {
+      const asksBefore = x1.chain.requests;
       const run = await runScript({
         rpcUrl: x1.url,
         geckoTerminalUrl: gecko.url,
@@ -200,11 +200,11 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
         ),
         run.stderr,
       );
-      assert.equal(x1.chain.blockTimeAsks, asksBefore);
+      assert.equal(x1.chain.requests, asksBefore);
     });
 
-    it("refuses a run whose output/csv/, where it writes the summary, takes no new file, before it asks the chain for any reward's time", async () => {
-      const asksBefore = x1.chain.blockTimeAsks;
+    it("refuses a run whose output/csv/, where it writes the summary, takes no new file, before it asks the chain anything", async () => {
+      const asksBefore = x1.chain.requests;
       const run = await runScript({
         rpcUrl: x1.url,
         geckoTerminalUrl: gecko.url,
@@ -216,7 +216,7 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
         run.stderr,
         /writes the summary to output\/csv\/xnt_rewards_analytics\.csv, in the folder it runs in, and its folder, .*, takes no new file/,
       );
-      assert.equal(x1.chain.blockTimeAsks, asksBefore);
+      assert.equal(x1.chain.requests, asksBefore);
     });
   });
 });
