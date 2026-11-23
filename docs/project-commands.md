@@ -144,7 +144,7 @@ the password script, `source`, at a terminal, in the repo's top folder.
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
 | `node bin/fetch-total-validator-earnings.js` | the flags of `start` above | The script, as `npm start` runs it. `--help` describes each flag, with examples and the exit codes. | `node bin/fetch-total-validator-earnings.js --vote-pubkey <vote account> --epochs 20` |
-| `source ./bin/unlock-api-keys.sh` | — | Asks for the key store's password, showing nothing typed, checks that it opens every key saved, and keeps it in `API_KEYS_PASSWORD` for the terminal, so the programs open their keys without asking. Runs in bash or zsh. | `source ./bin/unlock-api-keys.sh` |
+| `source ./bin/unlock-api-keys.sh` | `--help` | Asks for the key store's password, showing nothing typed, checks that it opens every key saved, and keeps it in `API_KEYS_PASSWORD` for the terminal, so the programs open their keys without asking. Runs in bash or zsh, and returns 0 when it keeps the password, 1 when it keeps none. `--help`, or `-h`, prints its help, asks nothing and returns 0. | `source ./bin/unlock-api-keys.sh` |
 
 ---
 
