@@ -209,7 +209,9 @@ validator's rewards over the full history, checked on 2026-11-10.
 
 ## Known bugs
 
-None is known. When one is found, it gets a test in
+One is known, with its test in `test/known-bugs.test.js`: git keeps a
+file written directly in `output/`, which `.gitignore` should ignore.
+When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
