@@ -182,8 +182,8 @@ function answer(method, params, chain) {
  * @param {boolean} [options.stalled=false] - Whether it takes each request and answers none
  * @param {boolean} [options.stopsInBody=false] - Whether it answers each request with its headers and the start of a body, and sends no more
  * @returns {Promise<{url: string, chain: Object, close: function(): Promise<void>}>} The endpoint's url,
- *   the chain's settings, as `rewardSeconds` takes them, with `blockTimeAsks`, the getBlockTime requests it
- *   has taken, and a way to stop it
+ *   the chain's settings, as `rewardSeconds` takes them, with `requests`, every request it has taken,
+ *   `blockTimeAsks`, the getBlockTime requests among them, and a way to stop it
  */
 export function startStandInX1({
   votePubkey,
@@ -209,6 +209,7 @@ export function startStandInX1({
     noRewardEpochs,
     failBlockTimes,
     blockTimeAsks: 0,
+    requests: 0,
   };
   const server = http.createServer((request, response) => {
     if (stalled) return;
@@ -228,6 +229,7 @@ export function startStandInX1({
         ...answer(call.method, call.params ?? [], chain),
       });
       const calls = JSON.parse(body);
+      chain.requests += Array.isArray(calls) ? calls.length : 1;
       response.setHeader("content-type", "application/json");
       response.end(
         JSON.stringify(

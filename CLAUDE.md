@@ -191,8 +191,10 @@ GeckoTerminal served locally. `test/README.md` lists them.
 crypto-price-fetchers' checks (`crypto-price-fetchers/lib/repo-checks`):
 every EVM address in EIP-55's form, every npm target named in
 `docs/project-commands.md`, every test file and helper named in the
-docs, every link and path in a doc pointing at a file, folder or heading
-the repo keeps, and a `config-example.json` beside `config.json`, holding
+docs, every link in a doc, and every path in a code span that starts at
+the doc's own folder, with `.` or `..` as its first part, pointing at a
+file, folder or heading the repo keeps, and a `config-example.json`
+beside `config.json`, holding
 what it holds.
 
 ```bash
@@ -209,9 +211,7 @@ validator's rewards over the full history, checked on 2026-11-10.
 
 ## Known bugs
 
-One is known, with its test in `test/known-bugs.test.js`: git keeps a
-file written directly in `output/`, which `.gitignore` should ignore.
-When one is found, it gets a test in
+None is known. When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
