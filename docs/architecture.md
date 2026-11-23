@@ -62,7 +62,7 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
    script takes a setting, and each option's parser is made from the kind
    of value the schema gives the same setting, so a mistake in either stops
    the run, naming the setting or the option, before the chain is asked.
-   So does an output file whose folder does not exist.
+   So does an output file whose folder does not exist or takes no new file, or one that is a folder.
 2. The script finds the vote account and the current epoch, then asks the
    endpoint for the account's inflation reward in each epoch, from the last
    completed one back to epoch 0, or as many as asked. A reward's time is
@@ -89,7 +89,9 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
    `output/json/` by their `.gitkeep`, the empty file in each, and git
    ignores everything else in them, since the reports hold the owner's
    data and the repo is public. Before it asks the chain anything, the
-   run checks that the folder of each file it will write exists. Then it prints the
+   run checks that the folder of each file it will write exists and takes
+   a new file, which crypto-price-fetchers' `newFileRefusal` tells by making
+   one there and removing it. Then it prints the
    summary.
 
 A run sets its exit code to 1 as it starts, and to 0 once the files are
@@ -164,7 +166,10 @@ which runs actionlint, the checker of GitHub Actions workflow files, from
 its official release, refused unless its SHA-256 and its program's are the
 ones crypto-price-fetchers pins, the checks of a settings file against its
 JSON Schema and the option parsers made from the same kinds of value, the
-helper that ends a command line quietly when its output closes, the time
+helper that ends a command line quietly when its output closes,
+`newFileRefusal`, with which the script checks that the folder of each
+file it writes takes a new file (`crypto-price-fetchers/lib/new-file`),
+the time
 limit on each request to the X1 endpoint, and the checks its tests make
 of each command line's help and of the repo's tracked files. `package.json` names its main branch (`#main`), and
 `package-lock.json` keeps the commit installed, which `npm ci` installs.

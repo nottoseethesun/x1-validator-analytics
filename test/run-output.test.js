@@ -2,7 +2,10 @@
  * Tests of how a run of bin/fetch-total-validator-earnings.js, the real
  * script, run in a child process against stand-ins, ends and shows its
  * progress: a run whose output's reader stops reading, an --output whose
- * folder does not exist, and the progress bar's count.
+ * folder does not exist or takes no new file, or that is a folder, a run
+ * in a folder without output/csv/ or, with --json, output/json/, or whose
+ * output/csv/ takes no new file, the progress bar's count, and
+ * --no-verbose turning off the verbose config.json sets.
  * @module test/run-output.test
  */
 
@@ -30,6 +33,13 @@ const NOW_SECONDS = Date.UTC(2026, 10, 10, 12, 0, 0) / 1000;
 
 /** The stand-in chain's current epoch: the run reads epochs 19 to 0. */
 const CURRENT_EPOCH = 20;
+
+/**
+ * Why the tests that need a folder that takes no new file are skipped, or
+ * false: they use /proc, a folder of Linux's that takes no new file even
+ * from root, whom no folder's modes stop.
+ */
+const NO_PROC = !fs.existsSync("/proc") && "this system has no /proc";
 
 describe("fetch-total-validator-earnings.js, how a run ends", () => {
   let x1;
@@ -151,5 +161,62 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
     assert.equal(run.code, 0);
     assert.doesNotMatch(run.stdout, /Querying inflation reward for epoch/);
     assert.match(run.stdout, /\(5\/5 epochs\)/);
+  });
+
+  it("refuses an --output that is a folder, naming --output, before it asks the chain for any reward's time", async () => {
+    const folder = fs.mkdtempSync(`${os.tmpdir()}/x1-output-folder-`);
+    try {
+      const asksBefore = x1.chain.blockTimeAsks;
+      const run = await runScript({
+        rpcUrl: x1.url,
+        geckoTerminalUrl: gecko.url,
+        args: ["--output", folder],
+      });
+      assert.equal(run.code, 1);
+      assert.ok(
+        run.stderr.includes(
+          `option '-o, --output <file>' argument '${folder}' is invalid: it is a folder, not a file.`,
+        ),
+        run.stderr,
+      );
+      assert.equal(x1.chain.blockTimeAsks, asksBefore);
+    } finally {
+      fs.rmSync(folder, { recursive: true, force: true });
+    }
+  });
+
+  describe("in /proc, which takes no new file", { skip: NO_PROC }, () => {
+    it("refuses an --output whose folder takes no new file, naming --output, before it asks the chain for any reward's time", async () => {
+      const asksBefore = x1.chain.blockTimeAsks;
+      const run = await runScript({
+        rpcUrl: x1.url,
+        geckoTerminalUrl: gecko.url,
+        args: ["--output", "/proc/x1-validator-analytics-test.csv"],
+      });
+      assert.equal(run.code, 1);
+      assert.ok(
+        run.stderr.includes(
+          "option '-o, --output <file>' argument '/proc/x1-validator-analytics-test.csv' is invalid: its folder, /proc, takes no new file",
+        ),
+        run.stderr,
+      );
+      assert.equal(x1.chain.blockTimeAsks, asksBefore);
+    });
+
+    it("refuses a run whose output/csv/, where it writes the summary, takes no new file, before it asks the chain for any reward's time", async () => {
+      const asksBefore = x1.chain.blockTimeAsks;
+      const run = await runScript({
+        rpcUrl: x1.url,
+        geckoTerminalUrl: gecko.url,
+        folders: ["output/json"],
+        links: { "output/csv": "/proc" },
+      });
+      assert.equal(run.code, 1);
+      assert.match(
+        run.stderr,
+        /writes the summary to output\/csv\/xnt_rewards_analytics\.csv, in the folder it runs in, and its folder, .*, takes no new file/,
+      );
+      assert.equal(x1.chain.blockTimeAsks, asksBefore);
+    });
   });
 });

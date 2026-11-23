@@ -33,7 +33,8 @@
  * - Optional JSON export (output/json/xnt_rewards.json) includes metadata, summary, and full rewards array.
  * - Every file goes in output/csv/ or output/json/ of the folder the script runs in, the repo's
  *   top, where git keeps nothing but the folders; the run checks that each folder it will write
- *   in exists before it asks the chain anything.
+ *   in exists and takes a new file, and that --output is no folder, before it asks the chain
+ *   anything.
  * - CSV files include UTF-8 BOM for correct opening in LibreOffice/Excel.
  * - A failed query in epochs 0 to 15 is expected: X1's chain was rolled back early in its life, and its
  *   endpoint cannot give the rewards of some of those epochs, epoch 15 among them.
@@ -54,6 +55,7 @@ import {
   kindParser,
 } from "crypto-price-fetchers/lib/settings-schema";
 import { fetchWithinTimeLimit } from "crypto-price-fetchers/lib/time-limited-fetch";
+import { newFileRefusal } from "crypto-price-fetchers/lib/new-file";
 import moment from "moment";
 import { DEFAULTS, loadConfig } from "../configLoader.js";
 import { PUBLIC_KEY, PUBLIC_KEY_FORMATS } from "../public-key.js";
@@ -136,7 +138,8 @@ Exit codes:
      unexpected outside epochs 0 to 15
   1  an option was wrong or missing, config.json was refused, the folder
      of --output, output/csv/, or, with --json, output/json/ does not
-     exist, the vote account was not found, another
+     exist or takes no new file, --output is a folder, the vote account
+     was not found, another
      request to the chain failed, the chain gave no block time for a
      reward, a file could not be written, or the program reading the
      output stopped reading before the files were written`;
@@ -573,17 +576,25 @@ function folderExists(folder) {
 
 /**
  * Why the run cannot write one of its files, before it asks the chain
- * anything: the first folder of a file it will write that does not exist,
- * --output's, then output/csv/'s, for the summary, then, with --json,
- * output/json/'s.
+ * anything: an --output that is itself a folder, or the first folder of a
+ * file it will write that does not exist or takes no new file, --output's,
+ * then output/csv/'s, for the summary, then, with --json, output/json/'s.
+ * crypto-price-fetchers' `newFileRefusal` tells whether a folder takes a
+ * new file, by making one there and removing it.
  *
  * @param {{output: string, json: boolean}} argv - The options
- * @returns {?string} The message, or null when every folder exists
+ * @returns {?string} The message, or null when --output is no folder and
+ *   every folder exists and takes a new file
  */
-function missingOutputFolder(argv) {
+function unwritableOutput(argv) {
   const outputFolder = path.dirname(path.resolve(argv.output));
   if (!folderExists(outputFolder))
     return `option '-o, --output <file>' argument '${argv.output}' is invalid: its folder, ${outputFolder}, does not exist.`;
+  if (folderExists(argv.output))
+    return `option '-o, --output <file>' argument '${argv.output}' is invalid: it is a folder, not a file.`;
+  const outputRefusal = newFileRefusal(outputFolder);
+  if (outputRefusal !== null)
+    return `option '-o, --output <file>' argument '${argv.output}' is invalid: its folder, ${outputFolder}, takes no new file (${outputRefusal}).`;
   const kept = [
     [ANALYTICS_CSV, "the summary"],
     ...(argv.json ? [[FULL_JSON, "--json's files"]] : []),
@@ -592,6 +603,9 @@ function missingOutputFolder(argv) {
     const folder = path.dirname(path.resolve(file));
     if (!folderExists(folder))
       return `The run writes ${what} to ${file}, in the folder it runs in, and its folder, ${folder}, does not exist: run it in the repo's top folder, which keeps output/csv/ and output/json/.`;
+    const refusal = newFileRefusal(folder);
+    if (refusal !== null)
+      return `The run writes ${what} to ${file}, in the folder it runs in, and its folder, ${folder}, takes no new file (${refusal}).`;
   }
   return null;
 }
@@ -610,8 +624,8 @@ async function main() {
   }
   const argv = parseArguments(config);
   if (refused !== null) throw refused;
-  const missing = missingOutputFolder(argv);
-  if (missing !== null) throw new Error(missing);
+  const unwritable = unwritableOutput(argv);
+  if (unwritable !== null) throw new Error(unwritable);
   // endQuietlyWhenOutputCloses ends a run whose output's reader stops
   // reading, as head does, with the exit code set so far: 1 until the
   // files are written, or the account is found to have no rewards

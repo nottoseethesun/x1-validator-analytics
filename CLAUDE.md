@@ -48,7 +48,9 @@ in `output/csv/` and, with `--json`, its JSON in `output/json/`. Git keeps
 each folder by its `.gitkeep`, an empty file, and ignores everything else
 in it, as the format check and the secret scan do, since the reports hold
 the owner's data and the repo is public. A run checks that the folder of
-each file it will write exists before it asks the chain anything. A test
+each file it will write exists and takes a new file, with
+crypto-price-fetchers' `newFileRefusal` (`crypto-price-fetchers/lib/new-file`),
+before it asks the chain anything. A test
 runs the script in a temp folder of its own, so it never writes in the
 repo's `output/`.
 
@@ -207,11 +209,7 @@ validator's rewards over the full history, checked on 2026-11-10.
 
 ## Known bugs
 
-One is known, with its tests in `test/known-bugs.test.js`: an `--output`
-that names a folder, and a folder of a file the run writes that takes no
-new file, are refused only after every request, when the file cannot be
-written.
-When one is found, it gets a test in
+None is known. When one is found, it gets a test in
 `test/known-bugs.test.js`, declared with `knownBug`
 (`test/helpers/known-bug.js`), so the test passes while the bug is present.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
