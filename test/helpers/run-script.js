@@ -5,7 +5,8 @@
  *
  * The script runs in a temp folder of its own, removed afterwards, so it
  * writes nothing into the repo, with the output/csv/ and output/json/
- * folders the repo's top keeps, unless a test names others. The folder's
+ * folders the repo's top keeps, unless a test names others, or a link to
+ * another folder in place of one. The folder's
  * config.json points its price
  * lookup at a stand-in GeckoTerminal, and --rpc-url points it at a stand-in
  * X1 endpoint, so the run asks nothing outside the computer.
@@ -67,6 +68,7 @@ function readJson(file) {
  * @param {string} [run.configText] - The folder's config.json, written as given in place of the settings, for a file that is not JSON
  * @param {number} [run.timeoutMs=0] - How long the run may take before it is stopped, in milliseconds; 0 for no limit
  * @param {string[]} [run.folders=["output/csv", "output/json"]] - The folders made in the folder it runs in, as the repo's top keeps them
+ * @param {Object<string, string>} [run.links={}] - Links made in the folder it runs in, after its folders, each at its path, to the folder it names, which removing the folder it runs in leaves alone
  * @returns {Promise<{code: number, killed: boolean, stdout: string, stderr: string, rows: ?Array<Object>,
  *   analytics: ?Array<Object>, json: ?Object, analyticsJson: ?Array<Object>}>} How it ended, whether it was
  *   stopped for taking too long, and what it wrote
@@ -79,6 +81,7 @@ export async function runScript({
   configText,
   timeoutMs = 0,
   folders = ["output/csv", "output/json"],
+  links = {},
 }) {
   const dir = fs.mkdtempSync(
     path.join(os.tmpdir(), "x1-validator-analytics-test-"),
@@ -86,6 +89,8 @@ export async function runScript({
   try {
     for (const folder of folders)
       fs.mkdirSync(path.join(dir, folder), { recursive: true });
+    for (const [link, target] of Object.entries(links))
+      fs.symlinkSync(target, path.join(dir, link));
     fs.writeFileSync(
       path.join(dir, "config.json"),
       configText ??

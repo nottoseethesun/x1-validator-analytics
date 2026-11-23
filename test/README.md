@@ -30,7 +30,7 @@ node --test test/xnt-price.test.js
 
 ## Files
 
-Three test files run the whole script, `fetch-total-validator-earnings.test.js`, `refused-settings.test.js` and `run-output.test.js`; each of the others tests one part of it.
+Four test files run the whole script, `fetch-total-validator-earnings.test.js`, `refused-settings.test.js`, `run-output.test.js` and `known-bugs.test.js`, which holds the tests of the bug known today; each of the others tests one part of it.
 
 | File | What it checks |
 | --- | --- |
@@ -68,5 +68,7 @@ Three test files run the whole script, `fetch-total-validator-earnings.test.js`,
   older than 180 days.
 - `helpers/run-script.js` runs the script against both stand-ins, in a
   temp folder whose `config.json` the test writes, as settings or as text
-  that need not be JSON, and reads the files it wrote.
+  that need not be JSON, with `output/csv/` and `output/json/` unless the
+  test names other folders, or links to folders in their place, and reads
+  the files it wrote.
 - `helpers/known-bug.js` declares a test of a known bug (see `../CLAUDE.md`).
