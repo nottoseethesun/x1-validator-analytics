@@ -1,5 +1,5 @@
 /**
- * Tests of csvWriter.js, the writers of the rewards CSV and the analytics
+ * Tests of reports/csvWriter.js, the writers of the rewards CSV and the analytics
  * CSV.
  * @module test/csv-writer.test
  *
@@ -12,9 +12,9 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { writeAnalyticsCsv, writeMainCsv } from "../csvWriter.js";
-import { rewardRows } from "../rewards.js";
-import { analyticsMetrics, summarizeRewards } from "../summary.js";
+import { writeAnalyticsCsv, writeMainCsv } from "../reports/csvWriter.js";
+import { rewardRows } from "../rewards/rewards.js";
+import { analyticsMetrics, summarizeRewards } from "../reports/summary.js";
 
 /** One reward, and the counts of a run that queried its epoch alone. */
 const REWARDS = [

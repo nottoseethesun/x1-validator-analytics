@@ -8,7 +8,7 @@
  * Each run stops with exit code 1, naming the option or the setting at
  * fault, before it asks the chain anything: a typed value meets its
  * option's parser, and config.json meets its JSON Schema
- * (`configLoader.js`), whose kinds of value the parsers are made from.
+ * (`settings/configLoader.js`), whose kinds of value the parsers are made from.
  * `--help` still answers, with exit code 0, when config.json is refused.
  */
 
@@ -80,6 +80,7 @@ describe("fetch-total-validator-earnings.js, with a config.json it cannot take",
           geckoTerminalUrl: standIns.server.url,
           config: { requestTimeoutSeconds: limit },
         });
+        assert.equal(standIns.x1.chain.requests, 0, "the chain was asked");
         assert.equal(run.code, 1);
         assert.ok(
           run.stderr
@@ -111,6 +112,7 @@ describe("fetch-total-validator-earnings.js, with a config.json it cannot take",
         configText: "{ epochs: 3 }",
         args: ["--epochs", "1"],
       });
+      assert.equal(x1.chain.requests, 0, "the chain was asked");
       assert.equal(run.code, 1);
       assert.match(run.stderr, /^Error: config\.json is not valid JSON: /m);
     } finally {
@@ -128,6 +130,7 @@ describe("fetch-total-validator-earnings.js, with a config.json it cannot take",
           config: { epochs },
           timeoutMs: 60_000,
         });
+        assert.equal(standIns.x1.chain.requests, 0, "the chain was asked");
         assert.equal(run.code, 1, `epochs ${JSON.stringify(epochs)}`);
         assert.match(
           run.stderr,

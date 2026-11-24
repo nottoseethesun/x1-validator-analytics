@@ -1,5 +1,5 @@
 /**
- * Tests of how a run of bin/fetch-total-validator-earnings.js, the real
+ * Tests of how a run of bin/end-user/fetch-total-validator-earnings.js, the real
  * script, run in a child process against stand-ins, ends and shows its
  * progress: a run whose output's reader stops reading, an --output whose
  * folder does not exist or takes no new file, or that is a folder, a run
@@ -25,7 +25,7 @@ import { runScript, VOTE_PUBKEY } from "./helpers/run-script.js";
 
 /** The script under test. */
 const SCRIPT = fileURLToPath(
-  new URL("../bin/fetch-total-validator-earnings.js", import.meta.url),
+  new URL("../bin/end-user/fetch-total-validator-earnings.js", import.meta.url),
 );
 
 /** The stand-in chain's time: 12:00 UTC on 2026-11-10. */
@@ -105,7 +105,12 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
       args: ["--output", path.join(os.tmpdir(), "no-such-folder-x1", "r.csv")],
     });
     assert.equal(run.code, 1);
-    assert.match(run.stderr, /--output/);
+    assert.ok(
+      run.stderr.includes(
+        `option '-o, --output <file>' argument '${path.join(os.tmpdir(), "no-such-folder-x1", "r.csv")}' is invalid. Its folder, ${path.join(os.tmpdir(), "no-such-folder-x1")}, does not exist.`,
+      ),
+      run.stderr,
+    );
     assert.equal(x1.chain.requests, asksBefore);
   });
 
@@ -175,7 +180,7 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
       assert.equal(run.code, 1);
       assert.ok(
         run.stderr.includes(
-          `option '-o, --output <file>' argument '${folder}' is invalid: it is a folder, not a file.`,
+          `option '-o, --output <file>' argument '${folder}' is invalid. It is a folder, not a file.`,
         ),
         run.stderr,
       );
@@ -196,7 +201,7 @@ describe("fetch-total-validator-earnings.js, how a run ends", () => {
       assert.equal(run.code, 1);
       assert.ok(
         run.stderr.includes(
-          "option '-o, --output <file>' argument '/proc/x1-validator-analytics-test.csv' is invalid: its folder, /proc, takes no new file",
+          "option '-o, --output <file>' argument '/proc/x1-validator-analytics-test.csv' is invalid. Its folder, /proc, takes no new file",
         ),
         run.stderr,
       );

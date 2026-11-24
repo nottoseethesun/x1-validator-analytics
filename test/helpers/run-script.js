@@ -1,5 +1,5 @@
 /**
- * Runs bin/fetch-total-validator-earnings.js, the real script, in a child
+ * Runs bin/end-user/fetch-total-validator-earnings.js, the real script, in a child
  * process against stand-ins, and reads what it wrote.
  * @module test/helpers/run-script
  *
@@ -19,18 +19,21 @@ import path from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse/sync";
-import { ANALYTICS_CSV } from "../../csvWriter.js";
-import { ANALYTICS_JSON, FULL_JSON } from "../../jsonWriter.js";
+import { ANALYTICS_CSV } from "../../reports/csvWriter.js";
+import { ANALYTICS_JSON, FULL_JSON } from "../../reports/jsonWriter.js";
 
 const execFileAsync = promisify(execFile);
 
 /** The script under test. */
 const SCRIPT = fileURLToPath(
-  new URL("../../bin/fetch-total-validator-earnings.js", import.meta.url),
+  new URL(
+    "../../bin/end-user/fetch-total-validator-earnings.js",
+    import.meta.url,
+  ),
 );
 
-/** The vote account the tests ask about. */
-export const VOTE_PUBKEY = "Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs";
+/** The vote account the tests ask about: made up, a key no account on X1 is known to hold. */
+export const VOTE_PUBKEY = "MadeUpVote111111111111111111111111111111111";
 
 /**
  * Reads a csv the script wrote, if it wrote it.

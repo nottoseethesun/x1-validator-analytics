@@ -1,11 +1,11 @@
 /**
- * Tests of xnt-amount.js: XNT amounts written exact to the lamport.
+ * Tests of rewards/xnt-amount.js: XNT amounts written exact to the lamport.
  * @module test/xnt-amount.test
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { LAMPORTS_PER_XNT, formatXnt } from "../xnt-amount.js";
+import { LAMPORTS_PER_XNT, formatXnt } from "../rewards/xnt-amount.js";
 
 describe("formatXnt", () => {
   it("writes all nine decimal places", () => {

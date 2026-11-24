@@ -6,7 +6,7 @@
  * cumulative columns) + separate analytics summary. Optional JSON export available.
  *
  * @usage
- * `node bin/fetch-total-validator-earnings.js --help` lists every option, with
+ * `node bin/end-user/fetch-total-validator-earnings.js --help` lists every option, with
  * examples of its common uses and its exit codes; the command line is
  * declared with commander, the package that parses command lines, in
  * `parseArguments` below.
@@ -22,7 +22,7 @@
  * - Amounts are exact: XNT has nine decimal places, and every amount and XNT total keeps all nine.
  * - Each reward's price is XNT's in the USD stablecoin of the pool at liquidityPoolAddress, from
  *   GeckoTerminal's hourly candles: the close of the last candle that opened at or before the
- *   reward, less than a day before it (see xnt-price.js). GeckoTerminal's X1 candles start on
+ *   reward, less than a day before it (see rewards/xnt-price.js). GeckoTerminal's X1 candles start on
  *   2026-10-01, and its public api serves candles back to about 220 days ago: it answers a request
  *   only when its before-time is within the last 180 days, and a page reaches a thousand hourly
  *   candles back from that. A reward before either has empty price and value cells, with a
@@ -40,7 +40,7 @@
  *   endpoint cannot give the rewards of some of those epochs, epoch 15 among them.
  * - A reward's date is the block time of its effective slot, from getBlockTime(). A failed request for it is
  *   asked again twice, 2 seconds apart; when the chain still gives none, the run stops, naming the epoch.
- * - Settings come from config.json in the folder the script runs in (see configLoader.js).
+ * - Settings come from config.json in the folder the script runs in (see settings/configLoader.js).
  * - Requires Node 24 or later, as the repo's package.json says.
  */
 
@@ -55,20 +55,25 @@ import {
   kindParser,
 } from "crypto-price-fetchers/lib/settings-schema";
 import { fetchWithinTimeLimit } from "crypto-price-fetchers/lib/time-limited-fetch";
+import { fileToWriteArgument } from "crypto-price-fetchers/lib/file-to-write";
 import { newFileRefusal } from "crypto-price-fetchers/lib/new-file";
 import moment from "moment";
-import { DEFAULTS, loadConfig } from "../configLoader.js";
-import { PUBLIC_KEY, PUBLIC_KEY_FORMATS } from "../public-key.js";
+import { DEFAULTS, loadConfig } from "../../settings/configLoader.js";
+import { PUBLIC_KEY, PUBLIC_KEY_FORMATS } from "../../settings/public-key.js";
 import {
   ANALYTICS_CSV,
   writeMainCsv,
   writeAnalyticsCsv,
-} from "../csvWriter.js";
-import { ANALYTICS_JSON, FULL_JSON, writeJsonExport } from "../jsonWriter.js";
-import { formatXnt } from "../xnt-amount.js";
-import { geckoTerminalSource, priceTimes } from "../xnt-price.js";
-import { rewardRows } from "../rewards.js";
-import { countEpochs, summarizeRewards } from "../summary.js";
+} from "../../reports/csvWriter.js";
+import {
+  ANALYTICS_JSON,
+  FULL_JSON,
+  writeJsonExport,
+} from "../../reports/jsonWriter.js";
+import { formatXnt } from "../../rewards/xnt-amount.js";
+import { geckoTerminalSource, priceTimes } from "../../rewards/xnt-price.js";
+import { rewardRows } from "../../rewards/rewards.js";
+import { countEpochs, summarizeRewards } from "../../reports/summary.js";
 
 /**
  * Prices each reward at its own time, from GeckoTerminal's hourly candles.
@@ -118,17 +123,17 @@ The defaults of --rpc-url, --liquidity-pool-address, --output, --verbose
 and --epochs come from config.json in the folder the script runs in;
 --no-verbose turns off a verbose that config.json sets. When
 config.json is refused, --help shows the defaults written in the script
-(configLoader.js), and any other run stops: on a mistake in its options
+(settings/configLoader.js), and any other run stops: on a mistake in its options
 when it has one, else on the file's problems.
 
 Examples:
   Every reward of a vote account, from its first epoch to the last one
   completed, written to the CSV file config.json names:
-    $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account>
+    $ node bin/end-user/fetch-total-validator-earnings.js --vote-pubkey <vote-account>
   The last 20 epochs only, with each step logged:
-    $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
+    $ node bin/end-user/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
   Every reward, with the JSON files too, in output/json/:
-    $ node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
+    $ node bin/end-user/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
   The same first run, through npm:
     $ npm start -- --vote-pubkey <vote-account>
 
@@ -146,7 +151,7 @@ Exit codes:
 
 /**
  * The parsers of the options that take a value, made from the kinds of
- * value `config.json`'s schema gives the same settings (`configLoader.js`),
+ * value `config.json`'s schema gives the same settings (`settings/configLoader.js`),
  * with crypto-price-fetchers' `kindParser`, so a typed value and the same
  * value in the file meet one rule. A refusal names the option.
  */
@@ -537,7 +542,7 @@ async function fetchRewardsForEpochs(
 /**
  * Prints the final summary statistics.
  *
- * @param {Object} summary - The run's summary (`summarizeRewards` in summary.js).
+ * @param {Object} summary - The run's summary (`summarizeRewards` in reports/summary.js).
  */
 function printSummary(summary) {
   console.log("\nSummary:");
@@ -576,25 +581,25 @@ function folderExists(folder) {
 
 /**
  * Why the run cannot write one of its files, before it asks the chain
- * anything: an --output that is itself a folder, or the first folder of a
- * file it will write that does not exist or takes no new file, --output's,
- * then output/csv/'s, for the summary, then, with --json, output/json/'s.
- * crypto-price-fetchers' `newFileRefusal` tells whether a folder takes a
- * new file, by making one there and removing it.
+ * anything: an --output refused by crypto-price-fetchers'
+ * `fileToWriteArgument`, as empty, a folder, or in a folder that does not
+ * exist or takes no new file, then the first folder of another file it
+ * will write that does not exist or takes no new file, output/csv/'s, for
+ * the summary, then, with --json, output/json/'s. crypto-price-fetchers'
+ * `newFileRefusal` tells whether a folder takes a new file, by making one
+ * there and removing it. --output is checked here, not as commander
+ * parses it, since its value may come from config.json.
  *
  * @param {{output: string, json: boolean}} argv - The options
  * @returns {?string} The message, or null when --output is no folder and
  *   every folder exists and takes a new file
  */
 function unwritableOutput(argv) {
-  const outputFolder = path.dirname(path.resolve(argv.output));
-  if (!folderExists(outputFolder))
-    return `option '-o, --output <file>' argument '${argv.output}' is invalid: its folder, ${outputFolder}, does not exist.`;
-  if (folderExists(argv.output))
-    return `option '-o, --output <file>' argument '${argv.output}' is invalid: it is a folder, not a file.`;
-  const outputRefusal = newFileRefusal(outputFolder);
-  if (outputRefusal !== null)
-    return `option '-o, --output <file>' argument '${argv.output}' is invalid: its folder, ${outputFolder}, takes no new file (${outputRefusal}).`;
+  try {
+    fileToWriteArgument(argv.output);
+  } catch (error) {
+    return `option '-o, --output <file>' argument '${argv.output}' is invalid. ${error.message}`;
+  }
   const kept = [
     [ANALYTICS_CSV, "the summary"],
     ...(argv.json ? [[FULL_JSON, "--json's files"]] : []),

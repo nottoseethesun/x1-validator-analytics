@@ -13,7 +13,7 @@ reward its vote account received, each priced in USD at its own time,
 written to a CSV file with running totals, and a summary to a second
 file. X1 is a blockchain built from Solana's code, and XNT its coin.
 
-The script, `bin/fetch-total-validator-earnings.js`, runs on Node, the
+The script, `bin/end-user/fetch-total-validator-earnings.js`, runs on Node, the
 program that runs JavaScript outside a browser. It asks an X1 rpc
 endpoint, the json-rpc api of an X1 node, for each epoch's reward and the
 time of the block that paid it, and GeckoTerminal, a service that lists
@@ -35,8 +35,8 @@ value cells, with a warning. Amounts keep all nine of XNT's decimal places.
 
 ### The Scripts
 
-The programs you run from a terminal are in `bin/`. Each has a
-sub-section below; [Run](#run) shows each at work.
+The programs you run from a terminal are in `bin/end-user/`. Each has
+a sub-section below; [Run](#run) shows each at work.
 
 #### fetch-total-validator-earnings.js
 
@@ -51,12 +51,6 @@ The key manager, crypto-price-fetchers': it lists the api keys the top
 saves each key typed, encrypted with your password. The script sends no
 key today, so the list is empty.
 
-#### unlock-api-keys.sh
-
-The script that keeps the key store's password for a terminal, so the
-programs open their keys without asking. It runs with `source`, in bash
-or zsh.
-
 ## Table of Contents
 
 - [Overview](#overview)
@@ -64,7 +58,6 @@ or zsh.
   - [The Scripts](#the-scripts)
     - [fetch-total-validator-earnings.js](#fetch-total-validator-earningsjs)
     - [manage-api-keys.js](#manage-api-keysjs)
-    - [unlock-api-keys.sh](#unlock-api-keyssh)
 - [Disclaimer](#disclaimer)
 - [Screenshot](#screenshot)
 - [Prerequisites](#prerequisites)
@@ -79,8 +72,6 @@ or zsh.
     - [Usage of fetch-total-validator-earnings.js](#usage-of-fetch-total-validator-earningsjs)
   - [manage-api-keys.js](#manage-api-keysjs-1)
     - [Usage of manage-api-keys.js](#usage-of-manage-api-keysjs)
-  - [unlock-api-keys.sh](#unlock-api-keyssh-1)
-    - [Usage of unlock-api-keys.sh](#usage-of-unlock-api-keyssh)
 - [Configure](#configure)
 - [Lint & Test](#lint--test)
 - [Private Key Security](#private-key-security)
@@ -105,14 +96,11 @@ before you rely on them, for your taxes or for anything else.
 
 ## Screenshot
 
-The two CSV files a run writes, opened in Google Sheets, Google's
-spreadsheet app: the rewards, each with its price and the running totals,
-and the summary. The pictures show an earlier layout: their prices, the
-summary's labels and the date column's name, `Reward Date (UTC, approx)`,
-differ from a run's now. A run names the date column `Reward Date (UTC)`
-and prices each reward as [Prices](#prices) says, leaving a reward before
-2026-10-01, or older than GeckoTerminal's public api reaches, about 220
-days back, without a price.
+The two CSV files a run writes, drawn as tables: the rewards, each with
+its price and the running totals, and the summary. The run asked the
+tests' stand-in X1 endpoint and stand-in GeckoTerminal for its last 30
+epochs, so its figures are made up: the same reward each epoch, priced
+from made-up hourly candles.
 
 ![Validator Rewards with Prices](./readme-images/xnt-rewards-with-prices.png)
 ![Validator Rewards Analytics](./readme-images/xnt-rewards-analytics.png)
@@ -156,10 +144,8 @@ choose, by crypto-price-fetchers' key store, which keeps keys as LP Ranger,
 the owner's bot that manages his 9mm V3 liquidity positions, keeps its own.
 The top `config.json` lists the services under `apiKeys`; this repo's
 `npm run api-keys` runs the store's key manager, which lists their keys,
-never showing their characters, and saves each one asked for; and
-`source ./bin/unlock-api-keys.sh`, a script in the repo's `bin/`, keeps the
-password for a terminal. A key is never a setting in a file, nor a
-command-line argument.
+never showing their characters, and saves each one asked for. A key is
+never a setting in a file, nor a command-line argument.
 
 ---
 
@@ -251,7 +237,7 @@ rm -rf x1-validator-analytics
 
 ## Run
 
-The programs are in `bin/`. Each sub-section below covers one: first an
+The programs are in `bin/end-user/`. Each sub-section below covers one: first an
 example of how to run it, then what it does, and, under its Usage, more
 examples, of the options and cases that take more. Run them from the
 repo's top folder. The script's command line
@@ -263,11 +249,11 @@ account's public key.
 ### fetch-total-validator-earnings.js
 
 ```bash
-node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account>
+node bin/end-user/fetch-total-validator-earnings.js --vote-pubkey <vote-account>
 ```
 
 This writes every reward of a vote account, from its first epoch to the
-last one completed. `bin/fetch-total-validator-earnings.js` needs only the vote account's
+last one completed. `bin/end-user/fetch-total-validator-earnings.js` needs only the vote account's
 public key. It writes the rewards to
 `output/csv/xnt_rewards_with_prices.csv`, unless `--output` or
 `config.json` names another file, and the summary to
@@ -282,7 +268,7 @@ folder without them stops before it asks the chain anything.
 The last 20 epochs only, with each step logged:
 
 ```bash
-node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
+node bin/end-user/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --epochs 20 --verbose
 ```
 
 Every reward, with JSON files too: all of it in
@@ -290,7 +276,7 @@ Every reward, with JSON files too: all of it in
 `output/json/xnt_rewards_analytics.json`:
 
 ```bash
-node bin/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
+node bin/end-user/fetch-total-validator-earnings.js --vote-pubkey <vote-account> --json
 ```
 
 ### manage-api-keys.js
@@ -301,13 +287,13 @@ npm run api-keys
 
 This lists each key the top `config.json` names, saved or not, never
 showing its characters, and asks for each one not saved: `npm run
-api-keys` runs `bin/manage-api-keys.js`, the key manager. The script
+api-keys` runs `bin/end-user/manage-api-keys.js`, the key manager. The script
 sends no key today, so it lists none.
 
 #### Usage of manage-api-keys.js
 
-Whether the password kept for the terminal opens every saved key, by its
-exit code, 0 when it does; while no key is saved, any password does:
+Whether the password in `API_KEYS_PASSWORD` opens every saved key, by
+its exit code, 0 when it does; while no key is saved, any password does:
 
 ```bash
 npm run api-keys -- check-password
@@ -319,38 +305,12 @@ Its commands, with examples and its exit codes:
 npm run api-keys -- --help
 ```
 
-### unlock-api-keys.sh
-
-```bash
-source ./bin/unlock-api-keys.sh
-```
-
-This asks for the key store's password, showing nothing of what is
-typed, checks that it opens the keys saved, and keeps it for the terminal
-in `API_KEYS_PASSWORD`. `bin/unlock-api-keys.sh` runs with `source`,
-since a script run as a program cannot set anything in the terminal that
-started it.
-
-#### Usage of unlock-api-keys.sh
-
-The same from any other folder, by the script's path:
-
-```bash
-source /path/to/x1-validator-analytics/bin/unlock-api-keys.sh
-```
-
-Its help, which asks nothing and keeps no password:
-
-```bash
-source ./bin/unlock-api-keys.sh --help
-```
-
 ---
 
 ## Configure
 
 The script runs as it comes. Its settings are `config.json`, in the folder
-it runs in, over the defaults written in `configLoader.js`; a folder
+it runs in, over the defaults written in `settings/configLoader.js`; a folder
 without one gives those defaults, with a notice. The file is checked
 against its JSON Schema, a description of the keys the file may hold and
 the kind of value each takes, before the script takes any setting: a key
@@ -393,7 +353,7 @@ npm run check     # the whole gate, as CI runs it
 
 The tests ask nothing outside your computer: the script runs against a
 stand-in X1 endpoint and a stand-in GeckoTerminal served locally.
-[`test/README.md`](./test/README.md) describes the tests.
+[`docs/engineering.md`](docs/engineering.md#tests) describes the tests.
 
 ---
 

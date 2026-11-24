@@ -39,14 +39,14 @@ this repo installs ([crypto-price-fetchers](#crypto-price-fetchers)).
 
 | Module | What it does |
 | ------ | ------------ |
-| `bin/fetch-total-validator-earnings.js` | The command line, declared with commander, the package that parses a command line and writes its help: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. `--help` lists its options, with examples and its exit codes. |
-| `configLoader.js` | The settings: `config.json`, checked against its JSON Schema, over the defaults. |
-| `public-key.js` | A public key, as X1 writes an address: 32 bytes in base58, the kind of value the options and settings that hold one share. |
-| `xnt-price.js` | XNT's USD price at a time, from GeckoTerminal, through crypto-price-fetchers' GeckoTerminal client. |
-| `xnt-amount.js` | Amounts of XNT, exact to the lamport. |
-| `rewards.js` | The report's rows, with their running totals. |
-| `summary.js` | The run's summary, for the console, the analytics CSV and the analytics JSON. |
-| `csvWriter.js`, `jsonWriter.js` | The reports. |
+| `bin/end-user/fetch-total-validator-earnings.js` | The command line, declared with commander, the package that parses a command line and writes its help: reads the settings, asks the chain for each epoch's reward, prices them, and writes the reports. `--help` lists its options, with examples and its exit codes. |
+| `settings/configLoader.js` | The settings: `config.json`, checked against its JSON Schema, over the defaults. |
+| `settings/public-key.js` | A public key, as X1 writes an address: 32 bytes in base58, the kind of value the options and settings that hold one share. |
+| `rewards/xnt-price.js` | XNT's USD price at a time, from GeckoTerminal, through crypto-price-fetchers' GeckoTerminal client. |
+| `rewards/xnt-amount.js` | Amounts of XNT, exact to the lamport. |
+| `rewards/rewards.js` | The report's rows, with their running totals. |
+| `reports/summary.js` | The run's summary, for the console, the analytics CSV and the analytics JSON. |
+| `reports/csvWriter.js`, `reports/jsonWriter.js` | The reports. |
 
 ---
 
@@ -120,7 +120,7 @@ crypto-price-fetchers' GeckoTerminal client
 (`crypto-price-fetchers/dex-prices/geckoterminal`) asks for the candles, a
 thousand hours a request, within its budget of requests, sends a request
 refused as too many again after its waits, and finds each reward's candle.
-`xnt-price.js` asks it for the pool's candles from a day before the
+`rewards/xnt-price.js` asks it for the pool's candles from a day before the
 earliest reward to the latest, and checks that the pool pairs XNT with
 the stablecoin.
 
@@ -167,8 +167,11 @@ its official release, refused unless its SHA-256 and its program's are the
 ones crypto-price-fetchers pins, the checks of a settings file against its
 JSON Schema and the option parsers made from the same kinds of value, the
 helper that ends a command line quietly when its output closes,
-`newFileRefusal`, with which the script checks that the folder of each
-file it writes takes a new file (`crypto-price-fetchers/lib/new-file`),
+`fileToWriteArgument`, which refuses an `--output` that is empty, a
+folder, or in a folder that does not exist or takes no new file
+(`crypto-price-fetchers/lib/file-to-write`), `newFileRefusal`, with which
+the script checks that the folder of each other file it writes takes a
+new file (`crypto-price-fetchers/lib/new-file`),
 the time
 limit on each request to the X1 endpoint, and the checks its tests make
 of each command line's help and of the repo's tracked files. `package.json` names its main branch (`#main`), and
