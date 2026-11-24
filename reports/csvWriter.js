@@ -19,7 +19,7 @@ import { analyticsMetrics } from "./summary.js";
 /**
  * Writes the main per-epoch rewards CSV with cumulative columns.
  *
- * @param {Array} rows - The report's rows (`rewardRows` in rewards.js), oldest first.
+ * @param {Array} rows - The report's rows (`rewardRows` in rewards/rewards.js), oldest first.
  * @param {string} outputPath - Path to main CSV file.
  */
 export function writeMainCsv(rows, outputPath) {

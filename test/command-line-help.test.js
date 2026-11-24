@@ -62,10 +62,10 @@ const DEPENDENCY_BINS = Object.freeze(
  * help is asked for.
  */
 const COMMAND_LINES = Object.freeze([
-  { file: "bin/fetch-total-validator-earnings.js", command: [] },
-  { file: "bin/manage-api-keys.js", command: [] },
-  { file: "bin/manage-api-keys.js", command: ["set"] },
-  { file: "bin/manage-api-keys.js", command: ["check-password"] },
+  { file: "bin/end-user/fetch-total-validator-earnings.js", command: [] },
+  { file: "bin/end-user/manage-api-keys.js", command: [] },
+  { file: "bin/end-user/manage-api-keys.js", command: ["set"] },
+  { file: "bin/end-user/manage-api-keys.js", command: ["check-password"] },
   { program: "bash", file: "bin/unlock-api-keys.sh", command: [] },
   { file: DEPENDENCY_BINS["github-project-deps"], command: [] },
   { file: DEPENDENCY_BINS["run-actionlint"], command: [] },

@@ -22,12 +22,9 @@ import security from "eslint-plugin-security";
 
 /**
  * Public addresses on X1 that the code names: the XNT / USDC.X pool the
- * prices come from, and the vote account the tests ask about.
+ * prices come from.
  */
-const PUBLIC_ADDRESSES = [
-  "CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR",
-  "Ce5RppixDArjtH588uXMCryNYcAtbNqaWncY4tBCdYUs",
-];
+const PUBLIC_ADDRESSES = ["CAJeVEoSm1QQZccnCqYu9cnNF7TTD2fcUA3E5HQoxRvR"];
 
 export default [
   { ignores: ["**/node_modules/**", "**/coverage/**"] },

@@ -16,7 +16,7 @@
  */
 
 import moment from "moment";
-import { formatXnt } from "./xnt-amount.js";
+import { formatXnt } from "../rewards/xnt-amount.js";
 
 /** The last of the early epochs in which a failed query is expected, after X1's rollback. */
 const LAST_EARLY_EPOCH = 15;

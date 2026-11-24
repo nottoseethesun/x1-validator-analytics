@@ -19,7 +19,7 @@ export const ANALYTICS_JSON = "output/json/xnt_rewards_analytics.json";
 /**
  * Writes full data as JSON files if exportJson is true.
  *
- * @param {Array} rows - The report's rows (`rewardRows` in rewards.js), oldest first.
+ * @param {Array} rows - The report's rows (`rewardRows` in rewards/rewards.js), oldest first.
  * @param {Object} summary - The run's summary (`summarizeRewards` in summary.js).
  * @param {Object} chain - What the chain said about the vote account.
  * @param {number} chain.currentEpoch - Current chain epoch.

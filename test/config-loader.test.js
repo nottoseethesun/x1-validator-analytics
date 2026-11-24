@@ -1,6 +1,6 @@
 /**
- * Tests of the script's settings (`configLoader.js`) and of the public
- * keys its options and settings hold (`public-key.js`).
+ * Tests of the script's settings (`settings/configLoader.js`) and of the
+ * public keys its options and settings hold (`settings/public-key.js`).
  * @module test/config-loader.test
  *
  * The settings files are written in a temp folder of the test's own,
@@ -13,8 +13,8 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { DEFAULTS, loadConfig } from "../configLoader.js";
-import { isPublicKey } from "../public-key.js";
+import { DEFAULTS, loadConfig } from "../settings/configLoader.js";
+import { isPublicKey } from "../settings/public-key.js";
 
 /** The repo's own config.json. */
 const REPO_CONFIG = fileURLToPath(new URL("../config.json", import.meta.url));

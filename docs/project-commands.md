@@ -51,7 +51,7 @@ itself:
 
 ```sh
 npm start -- --vote-pubkey <vote account> --epochs 20
-node --test --test-name-pattern="fetchHourlyCandles" "test/*.test.js"
+node --test --test-timeout=60000 --test-name-pattern="fetchHourlyCandles" "test/*.test.js"
 ```
 
 A command that runs one of the repo's command lines passes `--help` on to
@@ -120,8 +120,13 @@ them, after the lint, and must pass before a commit and a push.
 | `audit:security` | — | The security lint, `eslint-security.config.js`: the rules of eslint-plugin-security, against code open to attack, of eslint-plugin-no-secrets, against strings that look like keys, and crypto-price-fetchers' `no-secret-logging`, against printing a name that may hold a secret. | `npm run audit:security` |
 | `check` | — | The full gate: `lint`, `test:coverage`, `audit:deps` (with `audit:actionlint`), `audit:security` and `audit:secrets`, in that order, stopping at the first that fails. | `npm run check` |
 | `format:check` | — | Prettier in check mode; fails rather than rewriting. | `npm run format:check` |
-| `test` | — | The tests, on Node's test runner. The tests whose names hold some words run as `node --test --test-name-pattern="rewards" "test/*.test.js"`, since Node reads that flag only before the file pattern. | `npm test` |
+| `test` | — | The tests, on Node's test runner. The tests whose names hold some words run as `node --test --test-timeout=60000 --test-name-pattern="rewards" "test/*.test.js"`, since Node reads that flag only before the file pattern. | `npm test` |
 | `test:coverage` | — | The same tests with coverage, failing below 80% of lines covered. | `npm run test:coverage` |
+
+`test` and `test:coverage`, and so `check`, pass `--test-timeout=60000`
+to Node's test runner: a test or hook still running after a minute
+fails, by name, and the rest of its file runs
+([Tests](engineering.md#tests)).
 
 ---
 
@@ -137,13 +142,16 @@ npm runs this command itself, after another one.
 
 ## Commands Run Without npm
 
-These command lines, the programs in `bin/`, run with `node`, or, for
-the password script, `source`, at a terminal, in the repo's top folder.
-[The README's Run](../README.md#run) shows them at work.
+These command lines run with `node`, or, for the password script,
+`source`, at a terminal, in the repo's top folder: the script, in
+`bin/end-user/`, and the password script, in `bin/`. The key manager,
+also in `bin/end-user/`, runs as the npm target `api-keys`, above.
+[The README's Run](../README.md#run) shows the programs at work, and
+[The Unlock Script](engineering.md#the-unlock-script) the password script.
 
 | Command | Flags | Description | Example |
 | ------- | ----- | ----------- | ------- |
-| `node bin/fetch-total-validator-earnings.js` | the flags of `start` above | The script, as `npm start` runs it. `--help` describes each flag, with examples and the exit codes. | `node bin/fetch-total-validator-earnings.js --vote-pubkey <vote account> --epochs 20` |
+| `node bin/end-user/fetch-total-validator-earnings.js` | the flags of `start` above | The script, as `npm start` runs it. `--help` describes each flag, with examples and the exit codes. | `node bin/end-user/fetch-total-validator-earnings.js --vote-pubkey <vote account> --epochs 20` |
 | `source ./bin/unlock-api-keys.sh` | `--help` | Asks for the key store's password, showing nothing typed, checks that it opens every key saved, and keeps it in `API_KEYS_PASSWORD` for the terminal, so the programs open their keys without asking. Runs in bash or zsh, and returns 0 when it keeps the password, 1 when it keeps none. `--help`, or `-h`, prints its help, asks nothing and returns 0. | `source ./bin/unlock-api-keys.sh` |
 
 ---

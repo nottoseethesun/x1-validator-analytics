@@ -1,13 +1,17 @@
 /**
- * Tests of rewards.js and summary.js: the report's rows, and the summary
+ * Tests of rewards/rewards.js and reports/summary.js: the report's rows, and the summary
  * worked out from them.
  * @module test/rewards.test
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { rewardRows } from "../rewards.js";
-import { analyticsMetrics, countEpochs, summarizeRewards } from "../summary.js";
+import { rewardRows } from "../rewards/rewards.js";
+import {
+  analyticsMetrics,
+  countEpochs,
+  summarizeRewards,
+} from "../reports/summary.js";
 
 const REWARDS = [
   {

@@ -35,22 +35,29 @@ cell and a warning, never a stand-in price. The GeckoTerminal client
 the owner's repo of code his projects share, which this repo installs
 (below), asks for the candles and finds each price, within its budget of
 requests and with its waits after a 429; this repo keeps no client of its
-own. `xnt-price.js` explains the rest.
+own. `rewards/xnt-price.js` explains the rest.
 
 ## Where things are
 
-The programs a reader runs from a terminal are in `bin/`: the script,
-`bin/fetch-total-validator-earnings.js`, the key manager and
-`unlock-api-keys.sh`. The modules the script uses stay at the repo's
-top. The script reads `config.json` from the folder it runs in, as
+The programs a reader runs from a terminal are in `bin/`. Those only an
+end user normally runs are in `bin/end-user/`, the owner's rule: the
+script, `bin/end-user/fetch-total-validator-earnings.js`, and the key
+manager. Any other program goes anywhere under `bin/` but there: `bin/`
+itself holds `unlock-api-keys.sh`, which a terminal sources rather than
+runs. The modules the script uses are in three folders,
+by the step of a run they serve: `settings/`, which reads `config.json`
+and checks a public key; `rewards/`, the rewards, their amounts and their
+prices; and `reports/`, what a run writes. The script reads `config.json` from the folder it runs in, as
 before, and writes its reports in that folder's `output/`: its CSV files
 in `output/csv/` and, with `--json`, its JSON in `output/json/`. Git keeps
 each folder by its `.gitkeep`, an empty file, and ignores everything else
 in it, as the format check and the secret scan do, since the reports hold
-the owner's data and the repo is public. A run checks that the folder of
-each file it will write exists and takes a new file, with
-crypto-price-fetchers' `newFileRefusal` (`crypto-price-fetchers/lib/new-file`),
-before it asks the chain anything. A test
+the owner's data and the repo is public. A run checks, before it asks
+the chain anything, `--output` with crypto-price-fetchers'
+`fileToWriteArgument` (`crypto-price-fetchers/lib/file-to-write`): no
+folder, in a folder that exists and takes a new file; and that the folder
+of each other file it will write exists and takes a new file, with its
+`newFileRefusal` (`crypto-price-fetchers/lib/new-file`). A test
 runs the script in a temp folder of its own, so it never writes in the
 repo's `output/`.
 
@@ -60,7 +67,7 @@ The script sends no api key today. Should it come to, the key is kept as
 crypto-price-fetchers' key store keeps keys
 (`crypto-price-fetchers/api-key-store`): the service is listed in the top
 `config.json` under `apiKeys`, `npm run api-keys` runs the manager
-(`bin/manage-api-keys.js`), and `source ./bin/unlock-api-keys.sh`, a
+(`bin/end-user/manage-api-keys.js`), and `source ./bin/unlock-api-keys.sh`, a
 script in `bin/`, keeps the password for a terminal.
 `bin/unlock-api-keys.sh` is a copy of crypto-price-fetchers', which a
 test holds it to; a change to it is made there. A key is never a setting in a file git keeps, nor a command-line
@@ -69,10 +76,10 @@ argument.
 ## Settings
 
 The script's settings are `config.json`, in the folder it runs in, over
-the defaults in `configLoader.js`. Before the script takes a setting,
+the defaults in `settings/configLoader.js`. Before the script takes a setting,
 crypto-price-fetchers' `readSettingsFile`
 (`crypto-price-fetchers/lib/settings-file`) checks the file against its
-JSON Schema, `SETTINGS_SCHEMA` in `configLoader.js`, a description in JSON
+JSON Schema, `SETTINGS_SCHEMA` in `settings/configLoader.js`, a description in JSON
 of the keys the file may hold and the kind of value each takes, built from
 crypto-price-fetchers' kinds of value
 (`crypto-price-fetchers/lib/settings-schema`), as LP Ranger checks its
@@ -130,14 +137,14 @@ help's closing text (`addHelpText("after", …)`). Each option's value is
 checked as commander parses it, so a mistake names its option before
 anything is asked: its parser is made, with crypto-price-fetchers'
 `kindParser`, from the kind of value `config.json`'s schema gives the same
-setting (Settings, below), a public key in base58 (`public-key.js`), an
+setting (Settings, below), a public key in base58 (`settings/public-key.js`), an
 http or https url, a whole number above 0, or text that is not empty, so a
 typed value and a value in the file meet one rule. Each entry point calls
 crypto-price-fetchers' `endQuietlyWhenOutputCloses`
 (`crypto-price-fetchers/lib/closed-output`) before it starts, so a command
 line whose output is piped into a program that stops reading, such as
 `head`, ends with its exit code and no stack trace; the help test checks
-it of each command line. `bin/unlock-api-keys.sh`, the copy of crypto-price-fetchers' script that a terminal sources, is the one command line not in JavaScript: the help it answers is written in it, a reader of that help that stops reading ends it quietly, it ignores any argument but `-h` and `--help`, since a sourced script sees its caller's arguments, and the help test runs it with bash.
+it of each command line. `bin/unlock-api-keys.sh`, the copy of crypto-price-fetchers' script that a terminal sources, is the one command line not in JavaScript: the help it answers is written in it, a reader of that help that stops reading ends it quietly, it ignores any argument but `-h` and `--help`, since a sourced script sees its caller's arguments, and the help test runs it with bash; `docs/engineering.md` gives the steps that check it in zsh, by hand, since zsh is one of the computer's own programs, which the owner's rule keeps out of the automated tests. No README names `bin/unlock-api-keys.sh`, the owner's rule: `docs/engineering.md` describes it, once.
 `docs/project-commands.md` lists every npm target, including those
 that run other tools, such as `lint` and `check`, and every command line
 run with `node`, each with its flags and an example. LP Ranger's rules do not yet ask for the examples; this repo does.
@@ -151,7 +158,7 @@ form of Markdown files; Prettier, which formats code; actionlint, which
 checks the GitHub Actions workflow files, run from its official release by
 crypto-price-fetchers' bin `run-actionlint`, which refuses an archive whose
 SHA-256 differs from the one it pins; and knip, which finds files nothing
-uses), the tests with at least 80% of lines covered, and the security
+uses), the tests with at least 80% of lines covered and a minute's time limit on each (`--test-timeout=60000`), and the security
 audits (npm audit, npm's check of the installed packages against known
 vulnerabilities, with `run-actionlint --check`, which checks every archive
 of that release; the security lint in `eslint-security.config.js` with
@@ -160,7 +167,7 @@ name that may hold a secret; and secretlint, which looks for keys and
 credentials in files). It must pass before a commit and a push; husky, the
 package that runs scripts at git's hooks, runs `npm run lint` before each
 commit. CI runs `npm run check` on both supported versions of Node (below),
-in `ci.yml`, and each audit as a job of its own (`security-audit.yml`).
+in `ci.yml`, each run stopped at 20 minutes (`timeout-minutes`), and each audit as a job of its own (`security-audit.yml`).
 `main` is protected: those five checks must pass on a pull request, never
 squashed, and no branch is deleted. LP Ranger's eight steps in
 `docs/claude/CLAUDE-CI.md` take a change to `main`.
@@ -186,7 +193,7 @@ file's name, so `main`'s required checks stay as they are.
 
 The tests are in `test/`, on Node's own test runner, and ask nothing outside
 the computer: the script runs against a stand-in X1 endpoint and a stand-in
-GeckoTerminal served locally. `test/README.md` lists them.
+GeckoTerminal served locally. `docs/engineering.md` lists them.
 `test/repo-checks.test.js` holds the repo's tracked files to
 crypto-price-fetchers' checks (`crypto-price-fetchers/lib/repo-checks`):
 every EVM address in EIP-55's form, every npm target named in

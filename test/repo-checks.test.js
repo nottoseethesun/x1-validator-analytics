@@ -45,13 +45,9 @@ describe("the repo's tracked files", () => {
     );
   });
 
-  it("name every test file and test helper in test/README.md, docs/engineering.md or CLAUDE.md", () => {
+  it("name every test file and test helper in docs/engineering.md or CLAUDE.md", () => {
     assert.deepEqual(
-      testFilesMissingFromDocs(REPO_TOP, [
-        "test/README.md",
-        "docs/engineering.md",
-        "CLAUDE.md",
-      ]),
+      testFilesMissingFromDocs(REPO_TOP, ["docs/engineering.md", "CLAUDE.md"]),
       [],
     );
   });

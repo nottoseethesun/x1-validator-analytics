@@ -1,5 +1,5 @@
 /**
- * Tests of xnt-price.js: XNT's USD price at a time, from GeckoTerminal's
+ * Tests of rewards/xnt-price.js: XNT's USD price at a time, from GeckoTerminal's
  * hourly candles, asked through crypto-price-fetchers' GeckoTerminal
  * client of a stand-in GeckoTerminal, through a stand-in fetch, so they
  * ask nothing outside the computer.
@@ -18,7 +18,7 @@ import {
   fetchHourlyCandles,
   geckoTerminalSource,
   priceTimes,
-} from "../xnt-price.js";
+} from "../rewards/xnt-price.js";
 import {
   HIGH_SHARE,
   LOW_SHARE,
