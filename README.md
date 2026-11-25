@@ -31,7 +31,9 @@ GeckoTerminal's X1 candles start on 2026-10-01, and its public api serves
 candles back to about 220 days ago: it answers a request only when its
 before-time is within the last 180 days, and a page reaches a thousand
 hourly candles back from that. A reward before either has empty price and
-value cells, with a warning. Amounts keep all nine of XNT's decimal places.
+value cells, with a warning, and so does a reward in the hour not yet
+over, whose candle can still change, with a warning of its own: a run once
+the hour is over prices it. Amounts keep all nine of XNT's decimal places.
 
 ### The Scripts
 
@@ -46,8 +48,10 @@ running totals, and a summary to a second file.
 
 #### manage-api-keys.js
 
-The key manager, crypto-price-fetchers': it lists the api keys the top
-`config.json` names, saved or not, never showing a key's characters, and
+The key manager of crypto-price-fetchers, the owner's repo of code his
+projects share, which [Install](#install) brings: it lists the api keys
+the top `config.json` names, saved or not, never showing a key's
+characters, and
 saves each key typed, encrypted with your password. The script sends no
 key today, so the list is empty.
 
@@ -132,8 +136,8 @@ npm ci
 ```
 
 It installs everything the script needs, including, from GitHub,
-crypto-price-fetchers, the owner's repo of code his projects share: its
-key store, and its GeckoTerminal client, which prices XNT.
+crypto-price-fetchers: its key store, and its GeckoTerminal client, which
+prices XNT.
 
 ### Api Keys
 
@@ -292,8 +296,15 @@ sends no key today, so it lists none.
 
 #### Usage of manage-api-keys.js
 
+A program that opens the keys, the key manager among them, takes the
+key store's password from the environment variable `API_KEYS_PASSWORD`
+when it holds one, and asks for it only when it does not;
+[`docs/engineering.md`](docs/engineering.md) says how a terminal can keep
+it there.
+
 Whether the password in `API_KEYS_PASSWORD` opens every saved key, by
-its exit code, 0 when it does; while no key is saved, any password does:
+its exit code, 0 when it does; while no key is saved, any password does.
+Run with no `API_KEYS_PASSWORD` set, it says so and ends with exit code 1:
 
 ```bash
 npm run api-keys -- check-password

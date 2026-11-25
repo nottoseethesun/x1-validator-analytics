@@ -30,7 +30,8 @@ GeckoTerminal's X1 candles start on 2026-10-01, and its public api serves
 candles back to about 220 days ago: it answers a request only when its
 before-time is within the last 180 days, and a page reaches a thousand
 hourly candles back from that. A reward before either gets an empty price
-cell and a warning, never a stand-in price. The GeckoTerminal client
+cell and a warning, never a stand-in price, and so does a reward in the
+hour not yet over, whose candle can still change. The GeckoTerminal client
 (`crypto-price-fetchers/dex-prices/geckoterminal`) of crypto-price-fetchers,
 the owner's repo of code his projects share, which this repo installs
 (below), asks for the candles and finds each price, within its budget of
@@ -47,8 +48,8 @@ itself holds `unlock-api-keys.sh`, which a terminal sources rather than
 runs. The modules the script uses are in three folders,
 by the step of a run they serve: `settings/`, which reads `config.json`
 and checks a public key; `rewards/`, the rewards, their amounts and their
-prices; and `reports/`, what a run writes. The script reads `config.json` from the folder it runs in, as
-before, and writes its reports in that folder's `output/`: its CSV files
+prices; and `reports/`, what a run writes. The script reads `config.json` from the folder it runs in,
+and writes its reports in that folder's `output/`: its CSV files
 in `output/csv/` and, with `--json`, its JSON in `output/json/`. Git keeps
 each folder by its `.gitkeep`, an empty file, and ignores everything else
 in it, as the format check and the secret scan do, since the reports hold
@@ -144,7 +145,7 @@ crypto-price-fetchers' `endQuietlyWhenOutputCloses`
 (`crypto-price-fetchers/lib/closed-output`) before it starts, so a command
 line whose output is piped into a program that stops reading, such as
 `head`, ends with its exit code and no stack trace; the help test checks
-it of each command line. `bin/unlock-api-keys.sh`, the copy of crypto-price-fetchers' script that a terminal sources, is the one command line not in JavaScript: the help it answers is written in it, a reader of that help that stops reading ends it quietly, it ignores any argument but `-h` and `--help`, since a sourced script sees its caller's arguments, and the help test runs it with bash; `docs/engineering.md` gives the steps that check it in zsh, by hand, since zsh is one of the computer's own programs, which the owner's rule keeps out of the automated tests. No README names `bin/unlock-api-keys.sh`, the owner's rule: `docs/engineering.md` describes it, once.
+it of each command line. `bin/unlock-api-keys.sh`, the copy of crypto-price-fetchers' script that a terminal sources, is the one command line not in JavaScript: the help it answers is written in it, a reader of that help that stops reading ends it quietly, it ignores any argument but `-h` and `--help`, since a sourced script sees its caller's arguments, and the help test runs it with bash; `docs/engineering.md` gives the steps that check it in zsh, by hand, since the automated tests rely on Node and on programs every computer they run on has, bash, git and the programs a shell script calls, such as cat, and zsh is not on every such computer. No README names `bin/unlock-api-keys.sh`, the owner's rule: `docs/engineering.md` describes it, once.
 `docs/project-commands.md` lists every npm target, including those
 that run other tools, such as `lint` and `check`, and every command line
 run with `node`, each with its flags and an example. LP Ranger's rules do not yet ask for the examples; this repo does.

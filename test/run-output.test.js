@@ -16,20 +16,19 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { startStandInX1 } from "./helpers/stand-in-x1.js";
 import {
-  serveStandInGeckoTerminal,
-  standInGeckoTerminal,
-} from "./helpers/stand-in-gecko-terminal.js";
-import { runScript, VOTE_PUBKEY } from "./helpers/run-script.js";
+  NOW_SECONDS,
+  flatCandles,
+  hourOf,
+  runScript,
+  startStandIns,
+  VOTE_PUBKEY,
+} from "./helpers/run-script.js";
 
 /** The script under test. */
 const SCRIPT = fileURLToPath(
   new URL("../bin/end-user/fetch-total-validator-earnings.js", import.meta.url),
 );
-
-/** The stand-in chain's time: 12:00 UTC on 2026-11-10. */
-const NOW_SECONDS = Date.UTC(2026, 10, 10, 12, 0, 0) / 1000;
 
 /** The stand-in chain's current epoch: the run reads epochs 19 to 0. */
 const CURRENT_EPOCH = 20;
@@ -42,26 +41,23 @@ const CURRENT_EPOCH = 20;
 const NO_PROC = !fs.existsSync("/proc") && "this system has no /proc";
 
 describe("fetch-total-validator-earnings.js, how a run ends", () => {
+  let standIns;
   let x1;
   let gecko;
 
   before(async () => {
-    x1 = await startStandInX1({
-      votePubkey: VOTE_PUBKEY,
-      rewardLamports: 1234567891,
-      nowSeconds: NOW_SECONDS,
-      currentEpoch: CURRENT_EPOCH,
-    });
-    const candles = [];
-    const firstHour = Math.floor((NOW_SECONDS - 30 * 86400) / 3600) * 3600;
-    for (let open = firstHour; open <= NOW_SECONDS; open += 3600)
-      candles.push([open, 0.2]);
-    gecko = await serveStandInGeckoTerminal(standInGeckoTerminal({ candles }));
+    standIns = await startStandIns({ currentEpoch: CURRENT_EPOCH }, () => ({
+      candles: flatCandles(
+        hourOf(NOW_SECONDS - 30 * 86400),
+        hourOf(NOW_SECONDS),
+        0.2,
+      ),
+    }));
+    ({ x1, server: gecko } = standIns);
   });
 
   after(async () => {
-    if (x1 !== undefined) await x1.close();
-    if (gecko !== undefined) await gecko.close();
+    if (standIns !== undefined) await standIns.close();
   });
 
   it("ends with exit code 1 when the program reading its output stops reading before the files are written", async () => {

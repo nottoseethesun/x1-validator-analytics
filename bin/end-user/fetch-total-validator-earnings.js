@@ -26,7 +26,9 @@
  *   2026-10-01, and its public api serves candles back to about 220 days ago: it answers a request
  *   only when its before-time is within the last 180 days, and a page reaches a thousand hourly
  *   candles back from that. A reward before either has empty price and value cells, with a
- *   warning; it never gets a stand-in price, and the USD totals leave it out.
+ *   warning; it never gets a stand-in price, and the USD totals leave it out. So does a reward
+ *   in the hour not yet over, whose candle can still change, with a warning of its own: a run
+ *   once the hour is over prices it.
  * - Main CSV includes "Cumulative XNT" and "Cumulative USD" running totals.
  * - Progress bar shown in quiet mode for long runs.
  * - Generates separate analytics CSV (output/csv/xnt_rewards_analytics.csv).
@@ -98,7 +100,15 @@ async function lookUpPrices(rewards, source) {
     );
     return rewards.map(() => null);
   }
-  const unpriced = found.prices.filter((price) => price === null).length;
+  if (found.hourNotOver > 0) {
+    console.warn(
+      `Warning: ${found.hourNotOver} of ${rewards.length} rewards fall in the hour not yet over, whose candle can ` +
+        "still change, so they have no XNT price: their price and value cells are empty, and the USD totals leave " +
+        "them out. A run once the hour is over prices them.",
+    );
+  }
+  const unpriced =
+    found.prices.filter((price) => price === null).length - found.hourNotOver;
   if (unpriced > 0) {
     const earliest =
       found.earliestCandleSeconds === null

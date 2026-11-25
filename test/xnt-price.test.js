@@ -230,6 +230,7 @@ describe("priceTimes", () => {
     assert.deepEqual(found, {
       prices: [null, 0.2, 0.2 + 47 / 100000],
       earliestCandleSeconds: T0,
+      hourNotOver: 0,
     });
   });
 
@@ -291,6 +292,7 @@ describe("priceTimes", () => {
     assert.deepEqual(await priceTimes([], sourceFor(gecko).source), {
       prices: [],
       earliestCandleSeconds: null,
+      hourNotOver: 0,
     });
     assert.equal(gecko.asked.length, 0);
   });
@@ -314,5 +316,44 @@ describe("geckoTerminalSource", () => {
     const started = Date.now();
     await source.settings.sleep(20);
     assert.ok(Date.now() - started >= 15);
+  });
+});
+
+describe("priceTimes, for a time in the hour not yet over", () => {
+  it("gives it no price, since that hour's candle can still change", async () => {
+    const gecko = standInGeckoTerminal({
+      candles: [
+        [T0, 0.25],
+        [T0 + HOUR, 0.26],
+      ],
+    });
+    const { source } = sourceFor(gecko, {
+      now: () => (T0 + HOUR + 1800) * 1000,
+    });
+    const found = await priceTimes([T0 + 1800, T0 + HOUR + 600], source);
+    assert.deepEqual(found.prices, [0.25, null]);
+    assert.equal(found.hourNotOver, 1);
+  });
+
+  it("gives no price to a time whose hour ends while the candles are asked, since its candle was asked before then", async () => {
+    const gecko = standInGeckoTerminal({
+      candles: [
+        [T0, 0.25],
+        [T0 + HOUR, 0.26],
+      ],
+    });
+    const answer = standInGeckoFetch(gecko);
+    let nowMs = (T0 + 2 * HOUR - 10) * 1000;
+    const { source } = sourceFor(gecko, {
+      fetch: async (...request) => {
+        const response = await answer(...request);
+        nowMs = (T0 + 2 * HOUR + 20) * 1000;
+        return response;
+      },
+      now: () => nowMs,
+    });
+    const found = await priceTimes([T0 + 1800, T0 + HOUR + 600], source);
+    assert.deepEqual(found.prices, [0.25, null]);
+    assert.equal(found.hourNotOver, 1);
   });
 });

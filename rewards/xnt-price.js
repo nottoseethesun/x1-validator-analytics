@@ -6,7 +6,9 @@
  * What: a time's price is the close of the last hourly candle that opened
  * at or before it, less than a day before it. A time with no such candle,
  * such as one before the pool's first candle, gets no price, never a
- * stand-in figure. GeckoTerminal's X1 candles start on 2026-10-01.
+ * stand-in figure; nor does a time in the hour not yet over, whose candle
+ * holds only the trades made so far, so its prices can still change.
+ * GeckoTerminal's X1 candles start on 2026-10-01.
  *
  * How:
  *
@@ -35,6 +37,7 @@
 import {
   fetchCandles,
   geckoTerminalSettings,
+  periodEndSeconds,
   priceAt,
 } from "crypto-price-fetchers/dex-prices/geckoterminal";
 
@@ -135,17 +138,25 @@ export async function fetchHourlyCandles(
 }
 
 /**
- * Prices each time from the pool's hourly candles.
+ * Prices each time from the pool's hourly candles, save a time in the hour
+ * not yet over by the source's clock, which gets no price. The clock is
+ * read once, before the candles are asked for, so no candle answered
+ * before its hour ended is taken: an hour that ends while they are asked,
+ * through a slow answer or a wait after a 429, still counts as not over,
+ * and a run once it is over prices it.
  *
  * @param {number[]} timestamps - The times, in unix seconds
  * @param {XntPriceSource} source - Where and how to ask (`geckoTerminalSource`)
- * @returns {Promise<{prices: Array<number|null>, earliestCandleSeconds: (number|null)}>} Each time's
- *   price in USD per XNT, or null where there is none, and the open time of the earliest candle given
+ * @returns {Promise<{prices: Array<number|null>, earliestCandleSeconds: (number|null), hourNotOver: number}>} Each time's
+ *   price in USD per XNT, or null where there is none, the open time of the earliest candle given, and how many
+ *   of the times fall in the hour not yet over
  * @throws {Error} When GeckoTerminal cannot give the candles
  */
 export async function priceTimes(timestamps, source) {
   if (timestamps.length === 0)
-    return { prices: [], earliestCandleSeconds: null };
+    return { prices: [], earliestCandleSeconds: null, hourNotOver: 0 };
+  const nowSeconds = Math.floor(source.settings.now() / 1000);
+  const over = (timestamp) => periodEndSeconds(timestamp, "hour") <= nowSeconds;
   const candles = await fetchHourlyCandles(
     source,
     Math.min(...timestamps),
@@ -153,8 +164,11 @@ export async function priceTimes(timestamps, source) {
   );
   return {
     prices: timestamps.map((timestamp) =>
-      priceAt(candles, timestamp, MAX_CANDLE_AGE_SECONDS),
+      over(timestamp)
+        ? priceAt(candles, timestamp, MAX_CANDLE_AGE_SECONDS)
+        : null,
     ),
     earliestCandleSeconds: candles.length > 0 ? candles[0][0] : null,
+    hourNotOver: timestamps.filter((timestamp) => !over(timestamp)).length,
   };
 }

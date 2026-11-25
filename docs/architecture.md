@@ -114,7 +114,11 @@ public api serves candles back to about 220 days ago: it answers a request
 only when its before-time is within the last 180 days, and the client's
 last page, asked a day inside that edge, reaches a thousand hourly candles
 further back, more where hours went without a trade. A reward before
-either gets an empty price cell and a warning, never a stand-in price.
+either gets an empty price cell and a warning, never a stand-in price. So
+does a reward whose hour is not over when the run asks for the candles,
+with a warning of its own: that hour's candle holds only the trades made
+so far, so its prices can still change, and a run once the hour is over
+prices the reward (`periodEndSeconds`, in the client).
 
 crypto-price-fetchers' GeckoTerminal client
 (`crypto-price-fetchers/dex-prices/geckoterminal`) asks for the candles, a

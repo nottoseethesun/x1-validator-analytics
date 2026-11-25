@@ -14,44 +14,16 @@
 
 import { after, before, describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { startStandInX1, rewardSeconds } from "./helpers/stand-in-x1.js";
+import { rewardSeconds } from "./helpers/stand-in-x1.js";
+import { XNT } from "./helpers/stand-in-gecko-terminal.js";
 import {
-  XNT,
-  serveStandInGeckoTerminal,
-  standInGeckoTerminal,
-} from "./helpers/stand-in-gecko-terminal.js";
-import { metric, runScript, VOTE_PUBKEY } from "./helpers/run-script.js";
-
-const REWARD_LAMPORTS = 1234567891;
-const HOUR = 3600;
-
-/** The stand-in chain's time: 12:00 UTC on 2026-11-10. */
-const NOW_SECONDS = Date.UTC(2026, 10, 10, 12, 0, 0) / 1000;
-
-/**
- * The open time of the hourly candle that holds a time.
- *
- * @param {number} seconds - The time, in unix seconds
- * @returns {number} The hour's start, in unix seconds
- */
-function hourOf(seconds) {
-  return Math.floor(seconds / HOUR) * HOUR;
-}
-
-/**
- * Hourly candles at one price, from one hour to another.
- *
- * @param {number} fromHour - The first candle's open time
- * @param {number} toHour - The last candle's open time
- * @param {number} price - Each candle's price
- * @returns {Array<Array<number>>} The candles, as [open time, price]
- */
-function flatCandles(fromHour, toHour, price) {
-  const candles = [];
-  for (let open = fromHour; open <= toHour; open += HOUR)
-    candles.push([open, price]);
-  return candles;
-}
+  HOUR,
+  flatCandles,
+  hourOf,
+  metric,
+  runScript,
+  startStandIns,
+} from "./helpers/run-script.js";
 
 /**
  * Asks a json-rpc endpoint for its epoch, as the script does.
@@ -66,30 +38,6 @@ async function epochInfo(url) {
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getEpochInfo" }),
   });
   return (await response.json()).result;
-}
-
-/**
- * Starts the two stand-ins.
- *
- * @param {Object} chainSettings - The stand-in chain's settings, beyond the vote account, reward and time
- * @param {function(Object): Object} marketFor - Makes the stand-in GeckoTerminal's market from the chain's settings
- * @returns {Promise<{x1: Object, gecko: Object, server: Object, close: function(): Promise<void>}>} The stand-ins
- */
-async function startStandIns(chainSettings, marketFor) {
-  const x1 = await startStandInX1({
-    votePubkey: VOTE_PUBKEY,
-    rewardLamports: REWARD_LAMPORTS,
-    nowSeconds: NOW_SECONDS,
-    ...chainSettings,
-  });
-  const gecko = standInGeckoTerminal(marketFor(x1.chain));
-  const server = await serveStandInGeckoTerminal(gecko);
-  return {
-    x1,
-    gecko,
-    server,
-    close: async () => Promise.all([x1.close(), server.close()]),
-  };
 }
 
 describe("fetch-total-validator-earnings.js, three recent epochs, all priced", () => {
@@ -541,15 +489,10 @@ describe("fetch-total-validator-earnings.js, against an endpoint that stops in t
   });
 
   it("asks a failed block time again twice, 2 seconds apart, and goes on when the third request answers", async () => {
-    const x1 = await startStandInX1({
-      votePubkey: VOTE_PUBKEY,
-      rewardLamports: 1234567891,
-      nowSeconds: NOW_SECONDS,
-      failBlockTimes: 2,
-    });
-    const server = await serveStandInGeckoTerminal(
-      standInGeckoTerminal({ candles: [] }),
-    );
+    const standIns = await startStandIns({ failBlockTimes: 2 }, () => ({
+      candles: [],
+    }));
+    const { x1, server } = standIns;
     try {
       const started = Date.now();
       const run = await runScript({
@@ -561,20 +504,15 @@ describe("fetch-total-validator-earnings.js, against an endpoint that stops in t
       assert.equal(x1.chain.blockTimeAsks, 3);
       assert.ok(Date.now() - started >= 4000, "two waits of 2 seconds");
     } finally {
-      await Promise.all([x1.close(), server.close()]);
+      await standIns.close();
     }
   });
 
   it("stops with exit code 1, naming the epoch, when the chain gives no block time for a reward in three requests", async () => {
-    const x1 = await startStandInX1({
-      votePubkey: VOTE_PUBKEY,
-      rewardLamports: 1234567891,
-      nowSeconds: NOW_SECONDS,
-      failBlockTimes: 3,
-    });
-    const server = await serveStandInGeckoTerminal(
-      standInGeckoTerminal({ candles: [] }),
-    );
+    const standIns = await startStandIns({ failBlockTimes: 3 }, () => ({
+      candles: [],
+    }));
+    const { x1, server } = standIns;
     try {
       const run = await runScript({
         rpcUrl: x1.url,
@@ -585,7 +523,7 @@ describe("fetch-total-validator-earnings.js, against an endpoint that stops in t
       assert.match(run.stderr, /epoch 499/);
       assert.equal(x1.chain.blockTimeAsks, 3);
     } finally {
-      await Promise.all([x1.close(), server.close()]);
+      await standIns.close();
     }
   });
 });
