@@ -218,8 +218,9 @@ validator's rewards over the full history, checked on 2026-11-10.
 
 ## Known bugs
 
-None is known. When one is found, it gets a test in
-`test/known-bugs.test.js`, declared with `knownBug`
-(`test/helpers/known-bug.js`), so the test passes while the bug is present.
+One is known, with a test in `test/known-bugs.test.js`, declared with
+`knownBug` (`test/helpers/known-bug.js`), so the test passes while the bug
+is present: a reward in the hour not yet over gets the price of that
+hour's candle so far, which can still change.
 The bug's fix makes its test fail; declare that test with `it` instead, in the
 same change, among the tests of the code it is about.
