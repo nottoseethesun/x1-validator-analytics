@@ -3,8 +3,10 @@
 The files the script reads and writes, the gates every change passes, the
 tests, and CI: the same gates, run at each push by GitHub Actions, the
 service of GitHub, the website that hosts the repo. For how the script works, see
-[`docs/architecture.md`](architecture.md); for every command, those the
-repo's `package.json` gives npm, the package manager of Node, the program
+[`docs/architecture.md`](architecture.md); for how it decides each
+reward's price, see
+[`docs/price-determination-rules.md`](price-determination-rules.md); for
+every command, those the repo's `package.json` gives npm, the package manager of Node, the program
 that runs JavaScript outside a browser, to run and those run with `node`
 or `source`, see [`docs/project-commands.md`](project-commands.md).
 

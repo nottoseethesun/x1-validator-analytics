@@ -108,7 +108,9 @@ both to that.
 
 ## Docs
 
-`docs/architecture.md` says how the script works, `docs/engineering.md`
+`docs/architecture.md` says how the script works,
+`docs/price-determination-rules.md` how it decides each reward's
+price, `docs/engineering.md`
 covers the files, the gates, the tests and CI (the gates, run by GitHub
 Actions at each push), and
 `docs/project-commands.md` lists every command, those npm runs and those
