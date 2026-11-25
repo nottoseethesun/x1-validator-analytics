@@ -80,6 +80,10 @@ in the repo, and the format check and the secret scan pass over it.
 
 ## The Unlock Script
 
+The key store of crypto-price-fetchers keeps a project's api keys in
+`api-keys.json`, encrypted with one password, and its key manager,
+`bin/end-user/manage-api-keys.js`, which `npm run api-keys` runs, saves
+and lists them.
 `bin/unlock-api-keys.sh` asks for the key store's password once, showing
 nothing of what is typed, checks that it opens the keys saved, and keeps
 it for the terminal in `API_KEYS_PASSWORD`, so a program opens its keys
@@ -119,7 +123,11 @@ The script finds the repo's folder by a different line in bash and in
 zsh. crypto-price-fetchers' tests source its copy in bash, and, run by
 hand, in zsh ([In zsh, by Hand](https://github.com/nottoseethesun/crypto-price-fetchers/blob/main/docs/engineering.md#in-zsh-by-hand), in its
 `docs/engineering.md`, says how), in the same place beside its key
-manager as here; the tests here run only the script's help, in bash. To
+manager as here; the tests here run only the script's help, in bash: the
+automated tests rely on Node and on programs every computer they run on
+has, bash, git and the programs a shell script calls, such as cat,
+and zsh is not on every such computer (Debian and Ubuntu, for example, do
+not install it), so, by the owner's rule, its steps are run by hand. To
 check this copy in zsh, on a computer with zsh, such as a Mac, start zsh,
 and from the repo's top folder:
 
@@ -206,15 +214,16 @@ since it would hide the timer left running.
 
 ### Test Files
 
-Three test files run the whole script, `fetch-total-validator-earnings.test.js`, `refused-settings.test.js` and `run-output.test.js`; each of the others tests one part of it.
+Four test files run the whole script, `fetch-total-validator-earnings.test.js`, `hour-not-over.test.js`, `refused-settings.test.js` and `run-output.test.js`; each of the others tests one part of it.
 
 | File | What it checks |
 | --- | --- |
 | `fetch-total-validator-earnings.test.js` | The real script, run in a child process: one row per reward, oldest first, amounts and the XNT running total exact to nine decimal places, each price the close of its own hour's candle in the pool's own rate, values and the USD running total, a reward before GeckoTerminal's first candle left unpriced, with a warning, the failures of epochs 0 to 15 counted as expected, the json export, its summary's date range under `dateRange`, a run with no prices when GeckoTerminal refuses, a verbose run, which prints each epoch's raw answer and the current epoch's first slot, and still finds every reward, an account that began at epoch 20, whose epochs with no reward are counted apart from its failed query, whose share of expected epochs with a reward counts from its first reward, and whose json export names that first reward's epoch, an endpoint that does not answer and one that stops in the middle of its answer, each given up on after `requestTimeoutSeconds`, a block time asked again twice, 2 seconds apart, the run going on when the third request answers, and a chain that gives no block time for a reward in three requests, which stops the run with exit code 1, naming the epoch |
+| `hour-not-over.test.js` | The real script, run in a child process against a stand-in chain whose present is two hours ahead of the computer's clock, so its newest reward falls in an hour not over while the script runs: that reward left with empty price and value cells, counted among the rewards without a price, and warned of apart, as a reward a run once the hour is over prices, the other rewards priced, and exit code 0 |
 | `refused-settings.test.js` | The real script, given an option or a `config.json` it refuses: a wrong public key or url, or an empty `--output`, refused, naming its option; a `config.json` that is not JSON, a time limit that is no whole number of seconds from 1 to 2147483, an `epochs` that is no whole number above 0, and a key no setting has, refused with every problem listed; each with exit code 1, before the chain is asked; and `--help` answered with exit code 0 when `config.json` is refused |
 | `run-output.test.js` | The real script, run in a child process: a run whose output's reader stops reading after the first line, as `head -1` does, ending with exit code 1 and no file written; an `--output` whose folder does not exist or takes no new file, or that is a folder, and a run in a folder without `output/csv/`, or without `output/json/` with `--json`, or whose `output/csv/` takes no new file, each refused before the chain is asked anything, a folder that takes no new file shown with `/proc` where there is one; the progress bar counting out of the epochs there are when `--epochs` asks for more; and `--no-verbose` turning off a `verbose` that `config.json` sets |
 | `config-loader.test.js` | The settings (`settings/configLoader.js`): the repo's `config.json` held to the schema, each setting laid over its default, the defaults, with a notice, without a `config.json`, and a key no setting has and values of the wrong kind refused, listing every problem, a time limit Node's timers cannot keep among them; the public keys of `settings/public-key.js`; and `config.json` holding only settings a program reads |
-| `xnt-price.test.js` | The candles asked of crypto-price-fetchers' GeckoTerminal client, in the pool's own rate of XNT, from a day before the earliest time, a thousand hours at a time, its refusals and the waits after a 429, the check of the pool's pair, each time's price from the close of its candle, and a time up to about 220 days old priced from the page asked at the edge of the public api's 180 days |
+| `xnt-price.test.js` | The candles asked of crypto-price-fetchers' GeckoTerminal client, in the pool's own rate of XNT, from a day before the earliest time, a thousand hours at a time, its refusals and the waits after a 429, the check of the pool's pair, each time's price from the close of its candle, a time in the hour not yet over given no price and counted, as is one whose hour ends while the candles are asked, and a time up to about 220 days old priced from the page asked at the edge of the public api's 180 days |
 | `xnt-amount.test.js` | Writing lamports as XNT with all nine decimal places |
 | `rewards.test.js` | The report's rows, the epochs counted by outcome, the summary and the analytics metrics |
 | `csv-writer.test.js` | The rewards CSV and the analytics CSV, each starting with a UTF-8 BOM and ending with one newline, after its last row, and the labels of the reward dates and their range |
@@ -249,7 +258,14 @@ Three test files run the whole script, `fetch-total-validator-earnings.test.js`,
   temp folder whose `config.json` the test writes, as settings or as text
   that need not be JSON, with `output/csv/` and `output/json/` unless the
   test names other folders, or links to folders in their place, and reads
-  the files it wrote.
+  the files it wrote. `startStandIns` starts both stand-ins, the chain
+  paying 1.234567891 XNT an epoch, at 12:00 UTC on 2026-11-10 unless the
+  test gives another time, and GeckoTerminal with the market the test
+  makes from the chain, such as candles at its reward times, made with
+  `hourOf` and `flatCandles`. The four test files that run the whole
+  script start their stand-ins with it, save the test of a `config.json`
+  that is not JSON, whose run asks no GeckoTerminal, so it starts the
+  stand-in chain alone (`startStandInX1`).
 - `test/helpers/known-bug.js` declares a test of a known bug ([Known Bugs](#known-bugs)).
 
 ---
@@ -317,8 +333,7 @@ deleted. The steps from a branch to `main` are LP Ranger's eight, in its
 
 ## Known Bugs
 
-One is known, with a test in `test/known-bugs.test.js`, declared with
-`knownBug` (`test/helpers/known-bug.js`), so the test passes while the bug
-is present: a reward in the hour not yet over gets the price of that
-hour's candle so far, which can still change. The bug's fix makes its test fail; the same change
+None is known. A bug found gets a test in `test/known-bugs.test.js`,
+declared with `knownBug` (`test/helpers/known-bug.js`), so the test passes
+while the bug is present. The bug's fix makes its test fail; the same change
 declares the test with `it`, among the tests of the code it is about.

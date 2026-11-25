@@ -16,37 +16,12 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { startStandInX1 } from "./helpers/stand-in-x1.js";
 import {
-  serveStandInGeckoTerminal,
-  standInGeckoTerminal,
-} from "./helpers/stand-in-gecko-terminal.js";
-import { runScript, VOTE_PUBKEY } from "./helpers/run-script.js";
-
-const REWARD_LAMPORTS = 1234567891;
-
-/** The stand-in chain's time: 12:00 UTC on 2026-11-10. */
-const NOW_SECONDS = Date.UTC(2026, 10, 10, 12, 0, 0) / 1000;
-
-/**
- * Starts a stand-in chain that pays the account every epoch, and a
- * stand-in GeckoTerminal with no candles.
- *
- * @returns {Promise<{x1: Object, server: Object, close: function(): Promise<void>}>} The stand-ins
- */
-async function startStandIns() {
-  const x1 = await startStandInX1({
-    votePubkey: VOTE_PUBKEY,
-    rewardLamports: REWARD_LAMPORTS,
-    nowSeconds: NOW_SECONDS,
-  });
-  const server = await serveStandInGeckoTerminal(
-    standInGeckoTerminal({ candles: [] }),
-  );
-  return {
-    x1,
-    server,
-    close: async () => Promise.all([x1.close(), server.close()]),
-  };
-}
+  NOW_SECONDS,
+  REWARD_LAMPORTS,
+  runScript,
+  startStandIns,
+  VOTE_PUBKEY,
+} from "./helpers/run-script.js";
 
 describe("fetch-total-validator-earnings.js, given a wrong option", () => {
   for (const [args, option] of [
@@ -72,7 +47,8 @@ describe("fetch-total-validator-earnings.js, given a wrong option", () => {
 
 describe("fetch-total-validator-earnings.js, with a config.json it cannot take", () => {
   it("refuses requestTimeoutSeconds that is not a whole number of seconds from 1 to 2147483, with exit code 1", async () => {
-    const standIns = await startStandIns();
+    // A chain that pays the account every epoch, and no candles
+    const standIns = await startStandIns({}, () => ({ candles: [] }));
     try {
       for (const limit of ["abc", 0, -5, 2.01, 3000000]) {
         const run = await runScript({
@@ -97,9 +73,11 @@ describe("fetch-total-validator-earnings.js, with a config.json it cannot take",
   });
 
   it("stops with exit code 1, naming the file, when config.json is not JSON", async () => {
-    // No epoch pays the account, so a run that went on with the defaults
-    // would ask no GeckoTerminal, and --rpc-url keeps it on the stand-in
-    // chain.
+    /*-
+     *  No epoch pays the account, so a run that went on with the defaults
+     *  would ask no GeckoTerminal, and --rpc-url keeps it on the stand-in
+     *  chain.
+     */
     const x1 = await startStandInX1({
       votePubkey: VOTE_PUBKEY,
       rewardLamports: REWARD_LAMPORTS,
@@ -121,7 +99,8 @@ describe("fetch-total-validator-earnings.js, with a config.json it cannot take",
   });
 
   it('checks config.json\'s epochs as a typed --epochs is checked, stopping with exit code 1 on 0, -3 and "two"', async () => {
-    const standIns = await startStandIns();
+    // A chain that pays the account every epoch, and no candles
+    const standIns = await startStandIns({}, () => ({ candles: [] }));
     try {
       for (const epochs of [0, -3, "two"]) {
         const run = await runScript({

@@ -1,6 +1,9 @@
 /**
  * Runs bin/end-user/fetch-total-validator-earnings.js, the real script, in a child
- * process against stand-ins, and reads what it wrote.
+ * process against stand-ins, and reads what it wrote; and starts the two
+ * stand-ins a run asks, a stand-in X1 endpoint and a stand-in GeckoTerminal
+ * with the hourly candles a test describes (`startStandIns`, `hourOf`,
+ * `flatCandles`).
  * @module test/helpers/run-script
  *
  * The script runs in a temp folder of its own, removed afterwards, so it
@@ -21,6 +24,11 @@ import { fileURLToPath } from "node:url";
 import { parse } from "csv-parse/sync";
 import { ANALYTICS_CSV } from "../../reports/csvWriter.js";
 import { ANALYTICS_JSON, FULL_JSON } from "../../reports/jsonWriter.js";
+import { startStandInX1 } from "./stand-in-x1.js";
+import {
+  serveStandInGeckoTerminal,
+  standInGeckoTerminal,
+} from "./stand-in-gecko-terminal.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -34,6 +42,66 @@ const SCRIPT = fileURLToPath(
 
 /** The vote account the tests ask about: made up, a key no account on X1 is known to hold. */
 export const VOTE_PUBKEY = "MadeUpVote111111111111111111111111111111111";
+
+/** The reward each epoch pays, in lamports: 1.234567891 XNT, so an amount rounded to fewer than nine decimal places shows. */
+export const REWARD_LAMPORTS = 1234567891;
+
+/** An hour, in seconds. */
+export const HOUR = 3600;
+
+/** The stand-in chain's time, unless a test gives another: 12:00 UTC on 2026-11-10. */
+export const NOW_SECONDS = Date.UTC(2026, 10, 10, 12, 0, 0) / 1000;
+
+/**
+ * The open time of the hourly candle that holds a time.
+ *
+ * @param {number} seconds - The time, in unix seconds
+ * @returns {number} The hour's start, in unix seconds
+ */
+export function hourOf(seconds) {
+  return Math.floor(seconds / HOUR) * HOUR;
+}
+
+/**
+ * Hourly candles at one price, from one hour to another.
+ *
+ * @param {number} fromHour - The first candle's open time
+ * @param {number} toHour - The last candle's open time
+ * @param {number} price - Each candle's price
+ * @returns {Array<Array<number>>} The candles, as [open time, price]
+ */
+export function flatCandles(fromHour, toHour, price) {
+  const candles = [];
+  for (let open = fromHour; open <= toHour; open += HOUR)
+    candles.push([open, price]);
+  return candles;
+}
+
+/**
+ * Starts the two stand-ins: an X1 endpoint whose vote account is paid
+ * `REWARD_LAMPORTS` each epoch, at `NOW_SECONDS` unless the chain's settings
+ * give another time, and a GeckoTerminal.
+ *
+ * @param {Object} chainSettings - The stand-in chain's settings, beyond the vote account, reward and time
+ * @param {function(Object): Object} marketFor - Makes the stand-in GeckoTerminal's market from the chain's settings
+ * @returns {Promise<{x1: Object, gecko: Object, server: Object, close: function(): Promise<void>}>} The stand-ins
+ */
+export async function startStandIns(chainSettings, marketFor) {
+  const x1 = await startStandInX1({
+    votePubkey: VOTE_PUBKEY,
+    rewardLamports: REWARD_LAMPORTS,
+    nowSeconds: NOW_SECONDS,
+    ...chainSettings,
+  });
+  const gecko = standInGeckoTerminal(marketFor(x1.chain));
+  const server = await serveStandInGeckoTerminal(gecko);
+  return {
+    x1,
+    gecko,
+    server,
+    close: async () => Promise.all([x1.close(), server.close()]),
+  };
+}
 
 /**
  * Reads a csv the script wrote, if it wrote it.
