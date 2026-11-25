@@ -34,6 +34,8 @@ hourly candles back from that. A reward before either has empty price and
 value cells, with a warning, and so does a reward in the hour not yet
 over, whose candle can still change, with a warning of its own: a run once
 the hour is over prices it. Amounts keep all nine of XNT's decimal places.
+[`docs/price-determination-rules.md`](docs/price-determination-rules.md)
+follows a reward's price from start to finish.
 
 ### The Scripts
 
@@ -389,9 +391,11 @@ everything under its `docs/claude/`.
 
 ### Architecture and Engineering References
 
-The `docs/` folder holds three references:
+The `docs/` folder holds four references:
 
 - [`docs/architecture.md`](docs/architecture.md): how the script works.
+- [`docs/price-determination-rules.md`](docs/price-determination-rules.md):
+  how the script decides each reward's price.
 - [`docs/engineering.md`](docs/engineering.md): the files, the gates, the
   tests and CI: the checks GitHub runs, through its GitHub Actions
   service, at each push.
