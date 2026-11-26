@@ -112,7 +112,7 @@ both to that.
 `docs/price-determination-rules.md` how it decides each reward's
 price, `docs/engineering.md`
 covers the files, the gates, the tests and CI (the gates, run by GitHub
-Actions at each push), and
+Actions on each pull request and each push to `main`), and
 `docs/project-commands.md` lists every command, those npm runs and those
 run with `node` or `source`, as LP Ranger's `docs/` does. A change keeps
 them true.
@@ -126,6 +126,11 @@ bin, a script, a package or an outside service. Its introduction starts
 from the big picture, gives a few words of context or a scenario where the
 tool is used, says which codebase it comes from, and says what it does in
 precise words.
+crypto-price-fetchers' `docs/claude/CLAUDE-DOC-AUDIT.md`
+([on GitHub](https://github.com/nottoseethesun/crypto-price-fetchers/blob/main/docs/claude/CLAUDE-DOC-AUDIT.md))
+gives the audit in full: each rule with examples, how to check a doc
+and its JSDoc against the code, how to write a fix, and the loop of
+fresh readers that checks an audit before its fixes are made.
 
 ## Command lines
 
@@ -201,9 +206,7 @@ GeckoTerminal served locally. `docs/engineering.md` lists them.
 crypto-price-fetchers' checks (`crypto-price-fetchers/lib/repo-checks`):
 every EVM address in EIP-55's form, every npm target named in
 `docs/project-commands.md`, every test file and helper named in the
-docs, every link in a doc, and every path in a code span that starts at
-the doc's own folder, with `.` or `..` as its first part, pointing at a
-file, folder or heading the repo keeps, and a `config-example.json`
+docs, every link in a doc pointing at a file, folder or heading the repo keeps, and every path in a code span that starts at the doc's own folder, with `.` or `..` as its first part, at a file or folder it keeps, and a `config-example.json`
 beside `config.json`, holding
 what it holds.
 
