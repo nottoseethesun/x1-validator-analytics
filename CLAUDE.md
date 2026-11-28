@@ -119,18 +119,41 @@ them true.
 
 Every doc passes the owner's documentation audit: it tells no story of an
 old bug, leads every topic and sub-topic with the context it needs,
-introduces each tool where it first names it, explains with facts rather
-than adjectives, and leaves out no step in the logic of an explanation. A
-tool is anything a reader runs or a program uses: an `npm run` command, a
-bin, a script, a package or an outside service. Its introduction starts
+explains with facts rather than adjectives, and leaves out no step in the
+logic of an explanation.
+
+Each tool is introduced once. A tool is anything a reader runs or a
+program uses: an `npm run` command, a bin, a script, a package or an
+outside service. A basic tool or term, such as git, npm, Node or an
+outside service, is introduced only in `docs/glossary.md`; a part of this
+project, in its home doc; and a help, or a help page a user sees alone,
+introduces what its reader needs in a few words. An introduction starts
 from the big picture, gives a few words of context or a scenario where the
 tool is used, says which codebase it comes from, and says what it does in
 precise words.
+
+Each fact has one home, and every other text links to that home's
+heading. The homes are the README for a user's steps;
+`docs/architecture.md` for how the parts work; `docs/engineering.md` for
+the files, the gate, the tests and CI; `docs/project-commands.md` for
+command syntax; `docs/glossary.md` for tools and terms; a topic's own doc,
+such as `docs/price-determination-rules.md`, for that topic; and this file
+for rules, with links, and no fact a doc holds.
+
+An audit is led by the code. It looks first for code bugs, each with a
+known-bug test (Known bugs, below). It reports a text only for a wrong
+fact, a missing turning point, or a passage that would mislead, and it
+leaves wording alone unless the owner asks for an English audit.
+
 crypto-price-fetchers' `docs/claude/CLAUDE-DOC-AUDIT.md`
 ([on GitHub](https://github.com/nottoseethesun/crypto-price-fetchers/blob/main/docs/claude/CLAUDE-DOC-AUDIT.md))
 gives the audit in full: each rule with examples, how to check a doc
 and its JSDoc against the code, how to write a fix, and the loop of
-fresh readers that checks an audit before its fixes are made.
+fresh readers. That loop checks a new doc, a rewrite of a whole section or
+more, or an audit report that rewrites text at that scale. A report of
+code fixes with tests, and of short corrections of facts, skips it: the
+editor checks each finding, makes the fixes with their tests, and runs the
+gate.
 
 ## Command lines
 
